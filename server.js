@@ -109,15 +109,24 @@ function isValidToken(token) {
   return true;
 }
 
-function passwordMatches(input) {
-  const a = Buffer.from(String(input ?? ''), 'utf8');
-  const b = Buffer.from(ADMIN_PASSWORD, 'utf8');
-  if (a.length !== b.length) {
+function safeEqual(a, b) {
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  if (bufA.length !== bufB.length) {
     // trotzdem vergleichen, damit die Zeit nicht verrät, wie lang das Passwort ist
-    crypto.timingSafeEqual(b, b);
+    crypto.timingSafeEqual(bufB, bufB);
     return false;
   }
-  return crypto.timingSafeEqual(a, b);
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function passwordMatches(input) {
+  // Leerzeichen am Anfang/Ende verzeihen (Copy & Paste auf dem Handy o. Ä.)
+  const entered = String(input ?? '').trim();
+  const expected = String(ADMIN_PASSWORD).trim();
+  if (safeEqual(entered, expected)) return true;
+  // Groß-/Kleinschreibung wird ignoriert, falls das Passwort keine Sonderzeichen hat
+  return safeEqual(entered.toLowerCase(), expected.toLowerCase());
 }
 
 /* ============================================================
@@ -390,7 +399,12 @@ const server = http.createServer(async (req, res) => {
 loadContent().then(() => {
   server.listen(PORT, '0.0.0.0', () => {
     console.log('SHRED. läuft auf http://localhost:' + PORT);
-    console.log('Admin-Passwort:' , ADMIN_PASSWORD === 'shred-admin' ? 'shred-admin  (Standard – bitte in server.js ändern!)' : '(aus ADMIN_PASSWORD gesetzt)');
+    if (process.env.ADMIN_PASSWORD) {
+      console.log('Admin-Passwort: aus Umgebungsvariable ADMIN_PASSWORD');
+    } else {
+      console.log('Admin-Passwort: ' + ADMIN_PASSWORD + '   (Standardwert aus server.js)');
+    }
+
     console.log('Gespeicherte Texte:', DATA_FILE);
   });
 });

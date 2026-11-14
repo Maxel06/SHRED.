@@ -720,7 +720,8 @@ body.admin-mode [data-editable="1"]:hover {
         function close() { overlay.remove(); }
 
         function submitPassword() {
-            var password = input.value;
+            // Leerzeichen am Anfang/Ende verzeihen (Copy & Paste, Autofill)
+            var password = String(input.value || "").trim();
             if (!password) { error.textContent = "Bitte Passwort eingeben."; return; }
             submit.disabled = true;
             submit.textContent = "Prüfe…";
@@ -740,7 +741,12 @@ body.admin-mode [data-editable="1"]:hover {
                 close();
                 openPanel();
             }).catch(function (err) {
-                error.textContent = err.message || "Login fehlgeschlagen";
+                var msg = err.message || "Login fehlgeschlagen";
+                if (!msg || msg === "Failed to fetch" || msg === "Load failed" || err.name === "TypeError") {
+                    msg = "Server nicht erreichbar. Die Seite muss über den Server geöffnet werden " +
+                          "(npm start → http://localhost:3000), nicht als Datei.";
+                }
+                error.textContent = msg;
                 submit.disabled = false;
                 submit.textContent = "Öffnen";
                 input.select();
@@ -1070,6 +1076,10 @@ body.admin-mode [data-editable="1"]:hover {
        ========================================================== */
 
     function init() {
+        if (location.protocol === "file:") {
+            console.warn("[admin] Seite wurde als Datei geöffnet – bitte über den Server aufrufen: npm start → http://localhost:3000");
+        }
+
         wireAdminButton();
 
         // Originaltexte merken (für „zurücksetzen“)
