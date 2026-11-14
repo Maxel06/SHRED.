@@ -3,3 +3,6 @@ data/content.json
 data/content.json.tmp
 *.log
 .DS_Store
+.vercel
+.env
+.env.local

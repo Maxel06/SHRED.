@@ -1,0 +1,36 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": null,
+  "outputDirectory": null,
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 10,
+      "memory": 512
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/server.js", "destination": "/__not_found" },
+    { "source": "/package.json", "destination": "/__not_found" },
+    { "source": "/package-lock.json", "destination": "/__not_found" },
+    { "source": "/vercel.json", "destination": "/__not_found" },
+    { "source": "/lib/(.*)", "destination": "/__not_found" },
+    { "source": "/data/(.*)", "destination": "/__not_found" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    }
+  ]
+}

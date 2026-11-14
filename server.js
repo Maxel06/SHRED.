@@ -1,133 +1,39 @@
 /**
- * SHRED. – kleiner Webserver für die Website + Admin-Speicherung
- * ---------------------------------------------------------------
+ * SHRED. – lokaler Webserver (auch für Render / Railway / eigener Server)
+ * -----------------------------------------------------------------------
  * Start:  npm start   (oder: node server.js)
  * Port:   http://localhost:3000
  *
- * Passwort:  hier unten ändern oder als Umgebungsvariable setzen:
+ * Passwort:  server.js → ADMIN_PASSWORD  oder Umgebungsvariable:
  *            ADMIN_PASSWORD=meinPasswort npm start
  *
- * Die Texte werden in  data/content.json  gespeichert und an ALLE
- * Besucher ausgeliefert (GET /api/content).
+ * Gespeichert wird:
+ *   - mit Upstash/Vercel-KV-Variablen  → in Redis
+ *   - sonst                            → in data/content.json
+ *
+ * Die API-Logik liegt in  lib/api.js  und wird 1:1 auch auf Vercel benutzt
+ * (dort über  api/index.js ).
  */
 
 'use strict';
 
 const http = require('http');
 const fs = require('fs');
-const fsp = require('fs/promises');
 const path = require('path');
-const crypto = require('crypto');
+
+const { handleApi } = require('./lib/api');
+const { ADMIN_PASSWORD } = require('./lib/auth');
+const store = require('./lib/store');
 
 /* ============================================================
    EINSTELLUNGEN
    ============================================================ */
-
-/** Passwort für den Admin-Bereich (hier ändern!) */
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'shred-admin';
 
 /** Port (Render/Railway geben PORT automatisch vor) */
 const PORT = Number(process.env.PORT) || 3000;
 
 /** Ordner, der die Website ausliefert */
 const ROOT = __dirname;
-
-/** Datei mit den gespeicherten Texten */
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'content.json');
-
-/** Wie lange ein Login gültig bleibt (Millisekunden) */
-const SESSION_TTL = 12 * 60 * 60 * 1000; // 12 Stunden
-
-/** Max. Textlänge pro Element */
-const MAX_TEXT_LENGTH = 20000;
-const MAX_ENTRIES = 5000;
-
-/* ============================================================
-   SPEICHER (JSON-Datei)
-   ============================================================ */
-
-/** @type {Record<string, string>} */
-let content = {};
-let writeQueue = Promise.resolve();
-
-async function loadContent() {
-  try {
-    const raw = await fsp.readFile(DATA_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const clean = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        if (typeof v === 'string') clean[k] = v;
-      }
-      content = clean;
-    }
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      console.error('[content] konnte nicht gelesen werden:', err.message);
-    }
-    content = {};
-  }
-}
-
-function saveContent() {
-  // Schreibvorgänge nacheinander ausführen (kein kaputtes JSON)
-  writeQueue = writeQueue.then(async () => {
-    await fsp.mkdir(DATA_DIR, { recursive: true });
-    const tmp = DATA_FILE + '.tmp';
-    await fsp.writeFile(tmp, JSON.stringify(content, null, 2), 'utf8');
-    await fsp.rename(tmp, DATA_FILE);
-  }).catch((err) => {
-    console.error('[content] Schreiben fehlgeschlagen:', err.message);
-  });
-  return writeQueue;
-}
-
-/* ============================================================
-   LOGIN / SESSIONS
-   ============================================================ */
-
-/** token -> Zeitpunkt des Ablaufs */
-const sessions = new Map();
-/** ip -> {count, firstTry} (einfacher Brute-Force-Schutz) */
-const loginAttempts = new Map();
-
-function newToken() {
-  const token = crypto.randomBytes(24).toString('hex');
-  sessions.set(token, Date.now() + SESSION_TTL);
-  return token;
-}
-
-function isValidToken(token) {
-  if (!token || typeof token !== 'string') return false;
-  const expires = sessions.get(token);
-  if (!expires) return false;
-  if (Date.now() > expires) {
-    sessions.delete(token);
-    return false;
-  }
-  return true;
-}
-
-function safeEqual(a, b) {
-  const bufA = Buffer.from(a, 'utf8');
-  const bufB = Buffer.from(b, 'utf8');
-  if (bufA.length !== bufB.length) {
-    // trotzdem vergleichen, damit die Zeit nicht verrät, wie lang das Passwort ist
-    crypto.timingSafeEqual(bufB, bufB);
-    return false;
-  }
-  return crypto.timingSafeEqual(bufA, bufB);
-}
-
-function passwordMatches(input) {
-  // Leerzeichen am Anfang/Ende verzeihen (Copy & Paste auf dem Handy o. Ä.)
-  const entered = String(input ?? '').trim();
-  const expected = String(ADMIN_PASSWORD).trim();
-  if (safeEqual(entered, expected)) return true;
-  // Groß-/Kleinschreibung wird ignoriert, falls das Passwort keine Sonderzeichen hat
-  return safeEqual(entered.toLowerCase(), expected.toLowerCase());
-}
 
 /* ============================================================
    HTTP-HILFEN
@@ -166,154 +72,8 @@ function sendJson(res, status, data) {
   res.end(body);
 }
 
-function readBody(req, limit = 1024 * 200) {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    const chunks = [];
-    req.on('data', (chunk) => {
-      size += chunk.length;
-      if (size > limit) {
-        reject(new Error('Body zu groß'));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on('end', () => {
-      const raw = Buffer.concat(chunks).toString('utf8');
-      if (!raw) return resolve({});
-      try {
-        resolve(JSON.parse(raw));
-      } catch {
-        reject(new Error('Ungültiges JSON'));
-      }
-    });
-    req.on('error', reject);
-  });
-}
-
-function clientIp(req) {
-  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
-    req.socket.remoteAddress || 'unknown';
-}
-
-/* ============================================================
-   API
-   ============================================================ */
-
-async function handleApi(req, res, url) {
-  const route = url.pathname.replace(/\/+$/, '');
-
-  /* ---- Texte laden (öffentlich) ---- */
-  if (route === '/api/content' && req.method === 'GET') {
-    return sendJson(res, 200, {
-      ok: true,
-      content,
-      updatedAt: content.__updatedAt || null,
-    });
-  }
-
-  /* ---- Login ---- */
-  if (route === '/api/login' && req.method === 'POST') {
-    const ip = clientIp(req);
-    const now = Date.now();
-    const record = loginAttempts.get(ip) || { count: 0, firstTry: now };
-    if (now - record.firstTry > 10 * 60 * 1000) {
-      record.count = 0;
-      record.firstTry = now;
-    }
-    if (record.count >= 15) {
-      return sendJson(res, 429, {
-        ok: false,
-        error: 'Zu viele Versuche. Bitte in ein paar Minuten erneut probieren.',
-      });
-    }
-
-    let body;
-    try {
-      body = await readBody(req, 4096);
-    } catch {
-      return sendJson(res, 400, { ok: false, error: 'Ungültige Anfrage' });
-    }
-
-    if (!passwordMatches(body.password)) {
-      record.count += 1;
-      loginAttempts.set(ip, record);
-      return sendJson(res, 401, { ok: false, error: 'Falsches Passwort' });
-    }
-
-    loginAttempts.delete(ip);
-    const token = newToken();
-    return sendJson(res, 200, { ok: true, token, expiresIn: SESSION_TTL });
-  }
-
-  /* ---- Login prüfen ---- */
-  if (route === '/api/session' && req.method === 'GET') {
-    const token = req.headers['x-admin-token'];
-    return sendJson(res, 200, { ok: isValidToken(token) });
-  }
-
-  /* ---- Speichern ---- */
-  if (route === '/api/content' && (req.method === 'POST' || req.method === 'PUT')) {
-    let body;
-    try {
-      body = await readBody(req);
-    } catch (err) {
-      return sendJson(res, 400, { ok: false, error: err.message });
-    }
-
-    const token = body.token || req.headers['x-admin-token'];
-    if (!isValidToken(token)) {
-      return sendJson(res, 401, {
-        ok: false,
-        error: 'Sitzung abgelaufen – bitte neu einloggen.',
-      });
-    }
-
-    const updates = body.updates && typeof body.updates === 'object' ? body.updates : {};
-    const deletes = Array.isArray(body.deletes) ? body.deletes : [];
-
-    const next = { ...content };
-
-    for (const key of deletes) {
-      if (typeof key === 'string') delete next[key];
-    }
-
-    for (const [key, value] of Object.entries(updates)) {
-      if (typeof key !== 'string' || key.length > 500) continue;
-      if (typeof value !== 'string') continue;
-      const text = value.slice(0, MAX_TEXT_LENGTH);
-      if (text.trim() === '') {
-        delete next[key]; // leerer Text = Standardtext aus der HTML-Datei
-      } else {
-        next[key] = text;
-      }
-    }
-
-    if (Object.keys(next).length > MAX_ENTRIES) {
-      return sendJson(res, 400, { ok: false, error: 'Zu viele Einträge.' });
-    }
-
-    next.__updatedAt = new Date().toISOString();
-    content = next;
-    await saveContent();
-
-    return sendJson(res, 200, { ok: true, content, updatedAt: next.__updatedAt });
-  }
-
-  /* ---- Abmelden ---- */
-  if (route === '/api/logout' && req.method === 'POST') {
-    const token = req.headers['x-admin-token'];
-    if (token) sessions.delete(token);
-    return sendJson(res, 200, { ok: true });
-  }
-
-  return sendJson(res, 404, { ok: false, error: 'Unbekannte API-Route' });
-}
-
-/* ============================================================
-   STATISCHE DATEIEN
-   ============================================================ */
+/** Dateien, die nicht ausgeliefert werden dürfen */
+const BLOCKED = /^\/(data\/|lib\/|api\/|server\.js$|package(-lock)?\.json$|vercel\.json$|\.git\/|\.env)/;
 
 function serveStatic(req, res, url) {
   let pathname;
@@ -326,8 +86,7 @@ function serveStatic(req, res, url) {
 
   if (pathname === '/') pathname = '/index.html';
 
-  // data/ und server.js nicht ausliefern
-  if (/^\/(data\/|server\.js$|package(-lock)?\.json$|\.git\/)/.test(pathname)) {
+  if (BLOCKED.test(pathname)) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     return res.end('Not Found');
   }
@@ -380,7 +139,7 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname.startsWith('/api/')) {
     try {
-      await handleApi(req, res, url);
+      await handleApi(req, res);
     } catch (err) {
       console.error('[api]', err);
       if (!res.headersSent) sendJson(res, 500, { ok: false, error: 'Serverfehler' });
@@ -396,17 +155,17 @@ const server = http.createServer(async (req, res) => {
   serveStatic(req, res, url);
 });
 
-loadContent().then(() => {
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log('SHRED. läuft auf http://localhost:' + PORT);
-    if (process.env.ADMIN_PASSWORD) {
-      console.log('Admin-Passwort: aus Umgebungsvariable ADMIN_PASSWORD');
-    } else {
-      console.log('Admin-Passwort: ' + ADMIN_PASSWORD + '   (Standardwert aus server.js)');
-    }
-
-    console.log('Gespeicherte Texte:', DATA_FILE);
-  });
+server.listen(PORT, '0.0.0.0', () => {
+  console.log('SHRED. läuft auf http://localhost:' + PORT);
+  if (process.env.ADMIN_PASSWORD) {
+    console.log('Admin-Passwort: aus Umgebungsvariable ADMIN_PASSWORD');
+  } else {
+    console.log('Admin-Passwort: ' + ADMIN_PASSWORD + '   (Standardwert)');
+  }
+  console.log(
+    'Speicher:',
+    store.USE_REDIS ? 'Redis (Upstash/Vercel KV)' : store.DATA_FILE
+  );
 });
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
