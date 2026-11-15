@@ -842,7 +842,7 @@ const defaultProducts = [
 /* WEBSITE DATEN */
 
 let data = {
-    footer: "© 2026 SHRED. – Alle Rechte vorbehalten.",
+    footer: "",
     products: defaultProducts
 };
 
@@ -955,7 +955,7 @@ function renderWebsite() {
 
         const button = document.createElement("button");
         button.className = "add-cart-button";
-        button.textContent = "🛒 In den Warenkorb";
+        button.textContent = "In den Warenkorb";
 
         button.addEventListener("click", () => {
             addToCart(product.id);
