@@ -1,0 +1,1520 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHRED.</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    color: #f5f7ff;
+    background-color:#504e5c;
+    padding: 25px;
+}
+
+.glass {
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+}
+
+/* HEADER */
+
+header {
+    max-width: 1450px;
+    margin: auto;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-radius: 20px;
+    gap: 20px;
+}
+
+.brand-group {
+    display: flex;
+    align-items: center;
+}
+
+.admin-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.admin-button:hover {
+    transform: scale(1.03);
+}
+
+.brand-logo {
+    width: 300px;
+    max-width: 55vw;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.discord-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.discord-link img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 50%;
+    display: block;
+    transition: .2s;
+}
+
+.discord-link:hover img {
+    transform: scale(1.12);
+}
+
+/* WARENKORB BUTTON */
+
+.cart-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 55px;
+    height: 55px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 15px;
+    background: rgba(255,255,255,.1);
+    color: white;
+    font-size: 25px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.cart-button:hover {
+    background: rgba(255,255,255,.2);
+    transform: scale(1.06);
+}
+
+.cart-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 21px;
+    height: 21px;
+    padding: 2px 5px;
+    border-radius: 20px;
+    background: gray;
+    color: black;
+    font-size: 12px;
+    font-weight: bold;
+    display: grid;
+    place-items: center;
+}
+
+/* PRODUKTE */
+
+.products-section {
+    max-width: 1450px;
+    margin: 30px auto 0;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 22px;
+}
+
+.product {
+    border-radius: 22px;
+    padding: 18px;
+    transition: .25s;
+    overflow: hidden;
+}
+
+.product:hover {
+    transform: translateY(-7px);
+    border-color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.13);
+}
+
+.product-visual {
+    height: 190px;
+    border-radius: 15px;
+    background-color:#504e5c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 18px;
+    color: #b8c8e0;
+    font-size: 14px;
+}
+
+.product-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.product h3 {
+    font-size: 19px;
+    margin-bottom: 9px;
+    color: black;
+}
+
+.product p {
+    color: black;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 42px;
+}
+
+.price {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 17px;
+    color: black;
+}
+
+.product-label {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 7px 12px;
+    border-radius: 9px;
+    background: gray;
+    font-size: 12px;
+    color: black;
+}
+
+.add-cart-button {
+    width: 100%;
+    margin-top: 16px;
+    padding: 13px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 12px;
+    background: gray;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.add-cart-button:hover {
+    background: #c5c9ed;
+    transform: translateY(-2px);
+}
+
+/* FOOTER */
+
+footer {
+    max-width: 1450px;
+    margin: 60px auto 10px;
+    padding: 20px;
+    text-align: center;
+    color: #8191aa;
+    font-size: 13px;
+}
+
+/* POPUPS */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(10px);
+}
+
+.overlay.active {
+    display: flex;
+}
+
+.modal {
+    width: 100%;
+    max-width: 440px;
+    padding: 30px;
+    border-radius: 24px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal h2 {
+    margin-bottom: 10px;
+}
+
+.modal-description {
+    color: #aebbd1;
+    margin-bottom: 22px;
+    font-size: 14px;
+}
+
+/* INPUTS */
+
+input, textarea {
+    width: 100%;
+    padding: 13px;
+    margin: 8px 0 15px;
+    color: white;
+    background: rgba(0,0,0,.25);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 11px;
+    outline: none;
+    font-family: inherit;
+}
+
+input:focus, textarea:focus {
+    border-color: #8bd5ff;
+}
+
+input::placeholder, textarea::placeholder {
+    color: #8b9ab1;
+}
+
+input[type="file"] {
+    padding: 10px;
+    font-size: 13px;
+}
+
+/* BUTTONS */
+
+.action-button {
+    padding: 12px 17px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 11px;
+    background: black;
+    color: white;
+    cursor: pointer;
+    margin: 5px 4px 5px 0;
+    transition: .2s;
+}
+
+.action-button:hover {
+    background: #c5c9ed;
+}
+
+.close-button {
+    background: rgba(255,255,255,.08);
+}
+
+.delete-button {
+    background: rgba(255,80,100,.2);
+}
+
+/* WARENKORB */
+
+.cart-modal {
+    max-width: 550px;
+}
+
+.cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 13px;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 15px;
+    background: rgba(255,255,255,.06);
+}
+
+.cart-item img {
+    width: 65px;
+    height: 65px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: rgba(255,255,255,.08);
+}
+
+.cart-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cart-item-info h3 {
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.cart-item-info p {
+    color: #aebbd1;
+    font-size: 13px;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 9px;
+}
+
+.quantity-controls button {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 7px;
+    background: rgba(255,255,255,.12);
+    color: white;
+    cursor: pointer;
+}
+
+.remove-cart {
+    border: none;
+    background: transparent;
+    color: #ff8795;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.cart-empty {
+    text-align: center;
+    padding: 35px 10px;
+    color: #aebbd1;
+}
+
+.cart-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 18px 0;
+    border-top: 1px solid rgba(255,255,255,.2);
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.checkout-button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    background-color: gray;
+    color: #07111e;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.checkout-button:hover {
+    background: #c5c9ed;
+}
+
+/* ADMIN */
+
+.admin-modal {
+    max-width: 750px;
+}
+
+.admin-section {
+    padding: 12px 16px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 15px;
+    margin-top: 17px;
+    background: rgba(255,255,255,.035);
+}
+
+.admin-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    color: white;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.admin-toggle:hover {
+    color: #a9d9ff;
+}
+
+.toggle-symbol {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: rgba(255,255,255,.12);
+    font-size: 20px;
+}
+
+.admin-section-content {
+    padding-top: 10px;
+}
+
+.admin-product {
+    padding: 12px 0;
+    border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.product-toggle {
+    font-size: 15px;
+}
+
+.product-fields[hidden],
+.admin-section-content[hidden] {
+    display: none !important;
+}
+
+.field-label {
+    display: block;
+    font-size: 13px;
+    color: #c3cee0;
+    margin-top: 8px;
+}
+
+.image-preview {
+    width: 100%;
+    height: 130px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: rgba(255,255,255,.06);
+    margin: 5px 0 10px;
+}
+
+.error {
+    color: #ff8e9c;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.status {
+    color: #9de5b5;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+@media(max-width:600px) {
+    body {
+        padding: 12px;
+    }
+
+    .topbar {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .brand-logo {
+        width: 190px;
+    }
+
+    .discord-link img {
+        width: 38px;
+        height: 38px;
+    }
+
+    .header-actions {
+        gap: 9px;
+    }
+
+    .cart-button {
+        width: 42px;
+        height: 42px;
+        font-size: 21px;
+    }
+
+    .modal {
+        padding: 20px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="topbar glass">
+
+        <div class="brand-group">
+            <button class="admin-button"
+                    onclick="openLogin()"
+                    aria-label="Staff Login">
+
+                <img class="brand-logo"
+                     src="schriftzug.png"
+                     alt="SHRED.">
+
+            </button>
+        </div>
+
+        <div class="header-actions">
+
+            <button class="cart-button" onclick="openCart()">
+                🛒
+                <span class="cart-count" id="cartCount">0</span>
+            </button>
+
+            <a class="discord-link"
+               href="https://discord.gg/zUdZxqW6c5"
+               target="_blank"
+               rel="noopener noreferrer">
+
+                <img src="Discord-logo.png" alt="Discord">
+
+            </a>
+
+        </div>
+
+    </div>
+</header>
+
+<main>
+    <section class="products-section">
+        <div class="product-grid" id="productGrid"></div>
+    </section>
+</main>
+
+<footer>
+    <span id="footerText"></span>
+</footer>
+
+<!-- LOGIN -->
+
+<div class="overlay" id="loginOverlay">
+    <div class="modal glass">
+
+        <h2>Staff Login</h2>
+
+        <p class="modal-description">
+            Staff Password
+        </p>
+
+        <input
+            type="password"
+            id="passwordInput"
+            placeholder="Passwort eingeben"
+            onkeydown="if(event.key==='Enter') checkPassword()"
+        >
+
+        <button class="action-button" onclick="checkPassword()">
+            Anmelden
+        </button>
+
+        <button class="action-button close-button" onclick="closeLogin()">
+            Abbrechen
+        </button>
+
+        <div class="error" id="loginError"></div>
+
+    </div>
+</div>
+
+<!-- STAFF MENÜ -->
+
+<div class="overlay" id="adminOverlay">
+    <div class="modal admin-modal glass">
+
+        <h2>Staff</h2>
+
+        <p class="modal-description">
+            Produktübersicht
+        </p>
+
+        <div class="admin-section">
+
+            <button class="admin-toggle"
+                    onclick="toggleAdminSection('footerFields', this)">
+
+                <span>Footer-Text</span>
+                <span class="toggle-symbol">＋</span>
+
+            </button>
+
+            <div class="admin-section-content" id="footerFields" hidden>
+                <input id="editFooter">
+            </div>
+
+        </div>
+
+        <div class="admin-section">
+
+            <button class="admin-toggle"
+                    onclick="toggleAdminSection('productsFields', this)">
+
+                <span>Produkte bearbeiten</span>
+                <span class="toggle-symbol">＋</span>
+
+            </button>
+
+            <div class="admin-section-content" id="productsFields" hidden>
+
+                <div id="adminProducts"></div>
+
+                <button class="action-button" onclick="addProduct()">
+                    + Produkt hinzufügen
+                </button>
+
+            </div>
+
+        </div>
+
+        <div style="margin-top:20px">
+
+            <button class="action-button" onclick="saveAll()">
+                Änderungen speichern
+            </button>
+
+            <button class="action-button close-button" onclick="closeAdmin()">
+                Schließen
+            </button>
+
+            <div class="status" id="saveStatus"></div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- WARENKORB -->
+
+<div class="overlay" id="cartOverlay">
+
+    <div class="modal cart-modal glass">
+
+        <h2>Dein Warenkorb</h2>
+
+        <p class="modal-description">
+            Deine ausgewählten SHRED.-Produkte
+        </p>
+
+        <div class="cart-items" id="cartItems"></div>
+
+        <div class="cart-total">
+            <span>Gesamtpreis:</span>
+            <span id="cartTotal">0,00 €</span>
+        </div>
+
+        <button class="checkout-button" onclick="openCheckout()">
+            Zur Kasse gehen
+        </button>
+
+        <button class="action-button close-button" onclick="closeCart()">
+            Weiter einkaufen
+        </button>
+
+    </div>
+
+</div>
+
+<!-- CHECKOUT -->
+
+<div class="overlay" id="checkoutOverlay">
+
+    <div class="modal glass">
+
+        <h2>Bestellübersicht</h2>
+
+        <p class="modal-description">
+            Überprüfe deine Bestellung.
+        </p>
+
+        <div id="checkoutItems"></div>
+
+        <div class="cart-total">
+            <span>Gesamt:</span>
+            <span id="checkoutTotal">0,00 €</span>
+        </div>
+
+        <p class="modal-description">
+            Dies ist zunächst nur eine Bestellübersicht.
+            Es wird keine Zahlung durchgeführt.
+        </p>
+
+        <button class="action-button close-button" onclick="closeCheckout()">
+            Zurück
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+/* STANDARD PRODUKTE */
+
+const defaultProducts = [
+    {
+        id: "p1",
+        name: "Premium Headphones",
+        description: "Hochwertiger Sound und modernes Design.",
+        price: "89,99 €",
+        image: "",
+        label: "Bestseller"
+    },
+    {
+        id: "p2",
+        name: "Smart Watch",
+        description: "Dein Alltag, intelligent organisiert.",
+        price: "129,99 €",
+        image: "",
+        label: "Neu"
+    },
+    {
+        id: "p3",
+        name: "Gaming Keyboard",
+        description: "Präzision und Style beim Gaming.",
+        price: "74,99 €",
+        image: "",
+        label: "Beliebt"
+    },
+    {
+        id: "p4",
+        name: "Wireless Speaker",
+        description: "Klarer Sound für jeden Moment.",
+        price: "59,99 €",
+        image: "",
+        label: "Highlight"
+    },
+    {
+        id: "p5",
+        name: "Gaming Mouse",
+        description: "Komfort und Kontrolle beim Gaming.",
+        price: "39,99 €",
+        image: "",
+        label: "Bestseller"
+    },
+    {
+        id: "p6",
+        name: "VR Headset",
+        description: "Tauche in neue virtuelle Welten ein.",
+        price: "299,99 €",
+        image: "",
+        label: "Premium"
+    },
+    {
+        id: "p7",
+        name: "Tablet",
+        description: "Entertainment und Produktivität überall.",
+        price: "199,99 €",
+        image: "",
+        label: "Neu"
+    },
+    {
+        id: "p8",
+        name: "Laptop",
+        description: "Leistung für Arbeit, Schule und Freizeit.",
+        price: "699,99 €",
+        image: "",
+        label: "Premium"
+    }
+];
+
+/* WEBSITE DATEN */
+
+let data = {
+    footer: "© 2026 SHRED. – Alle Rechte vorbehalten.",
+    products: defaultProducts
+};
+
+let cart = [];
+
+/* PREISE */
+
+function parsePrice(price) {
+    if (typeof price === "number") return price;
+
+    let value = String(price || "")
+        .replace(/[^\d,.]/g, "")
+        .replace(/\./g, "")
+        .replace(",", ".");
+
+    let result = Number(value);
+
+    return Number.isFinite(result) ? result : 0;
+}
+
+function formatPrice(price) {
+    return price.toLocaleString("de-DE", {
+        style: "currency",
+        currency: "EUR"
+    });
+}
+
+/* DATEN LADEN */
+
+function loadData() {
+    try {
+        const saved = localStorage.getItem("glassStoreData");
+
+        if (saved) {
+            const parsed = JSON.parse(saved);
+
+            if (parsed && Array.isArray(parsed.products)) {
+                data = { ...data, ...parsed };
+
+                data.products.forEach((product, index) => {
+                    if (!product.id) product.id = "p" + (index + 1);
+                    if (typeof product.image !== "string") product.image = "";
+                });
+            }
+        }
+
+        const savedCart = localStorage.getItem("shredCart");
+
+        if (savedCart) {
+            const parsedCart = JSON.parse(savedCart);
+
+            if (Array.isArray(parsedCart)) {
+                cart = parsedCart.filter(item =>
+                    item &&
+                    typeof item.id === "string" &&
+                    Number.isInteger(item.quantity) &&
+                    item.quantity > 0
+                );
+            }
+        }
+
+    } catch (error) {
+        console.error("Ladefehler:", error);
+    }
+
+    renderWebsite();
+    updateCart();
+}
+
+/* PRODUKTE ANZEIGEN */
+
+function renderWebsite() {
+
+    document.getElementById("footerText").textContent = data.footer;
+
+    const grid = document.getElementById("productGrid");
+
+    grid.innerHTML = "";
+
+    data.products.forEach(product => {
+
+        const card = document.createElement("article");
+        card.className = "product glass";
+
+        const visual = document.createElement("div");
+        visual.className = "product-visual";
+
+        if (product.image) {
+            const image = document.createElement("img");
+            image.src = product.image;
+            image.alt = product.name || "Produktbild";
+            visual.appendChild(image);
+        } else {
+            visual.textContent = "Kein Bild";
+        }
+
+        const name = document.createElement("h3");
+        name.textContent = product.name || "";
+
+        const description = document.createElement("p");
+        description.textContent = product.description || "";
+
+        const price = document.createElement("div");
+        price.className = "price";
+        price.textContent = formatPrice(parsePrice(product.price));
+
+        const label = document.createElement("div");
+        label.className = "product-label";
+        label.textContent = product.label || "";
+
+        const button = document.createElement("button");
+        button.className = "add-cart-button";
+        button.textContent = "🛒 In den Warenkorb";
+
+        button.addEventListener("click", () => {
+            addToCart(product.id);
+        });
+
+        card.append(
+            visual,
+            name,
+            description,
+            price,
+            label,
+            button
+        );
+
+        grid.appendChild(card);
+
+    });
+
+}
+
+/* WARENKORB SPEICHERN */
+
+function saveCart() {
+    try {
+        localStorage.setItem("shredCart", JSON.stringify(cart));
+    } catch (error) {
+        console.error("Warenkorb konnte nicht gespeichert werden:", error);
+    }
+}
+
+/* PRODUKT HINZUFÜGEN */
+
+function addToCart(productId) {
+
+    const product = data.products.find(p => p.id === productId);
+
+    if (!product) return;
+
+    const existing = cart.find(item => item.id === productId);
+
+    if (existing) {
+        existing.quantity++;
+    } else {
+        cart.push({
+            id: productId,
+            quantity: 1
+        });
+    }
+
+    saveCart();
+    updateCart();
+
+}
+
+/* MENGE ÄNDERN */
+
+function changeQuantity(productId, amount) {
+
+    const item = cart.find(item => item.id === productId);
+
+    if (!item) return;
+
+    item.quantity += amount;
+
+    if (item.quantity <= 0) {
+        cart = cart.filter(item => item.id !== productId);
+    }
+
+    saveCart();
+    updateCart();
+
+}
+
+/* PRODUKT ENTFERNEN */
+
+function removeFromCart(productId) {
+
+    cart = cart.filter(item => item.id !== productId);
+
+    saveCart();
+    updateCart();
+
+}
+
+/* WARENKORB AKTUALISIEREN */
+
+function updateCart() {
+
+    const container = document.getElementById("cartItems");
+
+    container.innerHTML = "";
+
+    let total = 0;
+    let count = 0;
+
+    cart.forEach(item => {
+
+        const product = data.products.find(p => p.id === item.id);
+
+        if (!product) return;
+
+        const price = parsePrice(product.price);
+
+        total += price * item.quantity;
+        count += item.quantity;
+
+        const row = document.createElement("div");
+        row.className = "cart-item";
+
+        const image = document.createElement("img");
+
+        image.src = product.image || "";
+        image.alt = product.name || "Produkt";
+
+        const info = document.createElement("div");
+        info.className = "cart-item-info";
+
+        const name = document.createElement("h3");
+        name.textContent = product.name;
+
+        const priceText = document.createElement("p");
+        priceText.textContent = formatPrice(price * item.quantity);
+
+        const controls = document.createElement("div");
+        controls.className = "quantity-controls";
+
+        const minus = document.createElement("button");
+        minus.textContent = "−";
+        minus.onclick = () => changeQuantity(item.id, -1);
+
+        const quantity = document.createElement("span");
+        quantity.textContent = item.quantity;
+
+        const plus = document.createElement("button");
+        plus.textContent = "+";
+        plus.onclick = () => changeQuantity(item.id, 1);
+
+        controls.append(minus, quantity, plus);
+
+        info.append(name, priceText, controls);
+
+        const remove = document.createElement("button");
+        remove.className = "remove-cart";
+        remove.textContent = "×";
+        remove.title = "Produkt entfernen";
+        remove.onclick = () => removeFromCart(item.id);
+
+        row.append(image, info, remove);
+
+        container.appendChild(row);
+
+    });
+
+    if (count === 0) {
+        container.innerHTML = `
+            <div class="cart-empty">
+                <div style="font-size:40px;margin-bottom:12px;">🛒</div>
+                Dein Warenkorb ist noch leer.
+            </div>
+        `;
+    }
+
+    document.getElementById("cartCount").textContent = count;
+    document.getElementById("cartTotal").textContent = formatPrice(total);
+
+}
+
+/* WARENKORB ÖFFNEN */
+
+function openCart() {
+    updateCart();
+    document.getElementById("cartOverlay").classList.add("active");
+}
+
+function closeCart() {
+    document.getElementById("cartOverlay").classList.remove("active");
+}
+
+/* CHECKOUT */
+
+function openCheckout() {
+
+    if (cart.length === 0) {
+        alert("Dein Warenkorb ist leer.");
+        return;
+    }
+
+    const container = document.getElementById("checkoutItems");
+
+    container.innerHTML = "";
+
+    let total = 0;
+
+    cart.forEach(item => {
+
+        const product = data.products.find(p => p.id === item.id);
+
+        if (!product) return;
+
+        const subtotal = parsePrice(product.price) * item.quantity;
+
+        total += subtotal;
+
+        const line = document.createElement("p");
+
+        line.style.margin = "12px 0";
+        line.style.color = "#dce6f5";
+
+        line.textContent =
+            item.quantity + " × " +
+            product.name + " – " +
+            formatPrice(subtotal);
+
+        container.appendChild(line);
+
+    });
+
+    document.getElementById("checkoutTotal").textContent =
+        formatPrice(total);
+
+    closeCart();
+
+    document.getElementById("checkoutOverlay").classList.add("active");
+
+}
+
+function closeCheckout() {
+    document.getElementById("checkoutOverlay").classList.remove("active");
+}
+
+/* LOGIN */
+
+function openLogin() {
+
+    document.getElementById("loginOverlay").classList.add("active");
+
+    document.getElementById("passwordInput").value = "";
+
+    document.getElementById("loginError").textContent = "";
+
+}
+
+function closeLogin() {
+    document.getElementById("loginOverlay").classList.remove("active");
+}
+
+function checkPassword() {
+
+    const password = document.getElementById("passwordInput").value;
+
+    if (password === "67") {
+
+        closeLogin();
+        openAdmin();
+
+    } else {
+
+        document.getElementById("loginError").textContent =
+            "❌ Falsches Passwort!";
+
+    }
+
+}
+
+/* STAFF MENÜ */
+
+function openAdmin() {
+
+    document.getElementById("adminOverlay").classList.add("active");
+
+    document.getElementById("editFooter").value = data.footer;
+
+    document.getElementById("saveStatus").textContent = "";
+
+    renderAdminProducts();
+
+}
+
+function closeAdmin() {
+    document.getElementById("adminOverlay").classList.remove("active");
+}
+
+/* BEREICHE AUFKLAPPEN */
+
+function toggleAdminSection(contentId, button) {
+
+    const content = document.getElementById(contentId);
+
+    content.hidden = !content.hidden;
+
+    button.querySelector(".toggle-symbol").textContent =
+        content.hidden ? "＋" : "×";
+
+}
+
+/* PRODUKTE IM STAFF MENÜ */
+
+function renderAdminProducts() {
+
+    const container = document.getElementById("adminProducts");
+
+    container.innerHTML = "";
+
+    data.products.forEach((product, index) => {
+
+        const item = document.createElement("div");
+        item.className = "admin-product";
+
+        const heading = document.createElement("button");
+
+        heading.type = "button";
+        heading.className = "admin-toggle product-toggle";
+
+        const headingText = document.createElement("span");
+
+        headingText.textContent =
+            "Produkt " + (index + 1) + " – " +
+            (product.name || "Ohne Namen");
+
+        const toggleSymbol = document.createElement("span");
+
+        toggleSymbol.className = "toggle-symbol";
+        toggleSymbol.textContent = "＋";
+
+        heading.append(headingText, toggleSymbol);
+
+        const fieldsContainer = document.createElement("div");
+
+        fieldsContainer.className = "product-fields";
+        fieldsContainer.hidden = true;
+
+        heading.onclick = () => {
+
+            fieldsContainer.hidden = !fieldsContainer.hidden;
+
+            toggleSymbol.textContent =
+                fieldsContainer.hidden ? "＋" : "×";
+
+        };
+
+        const fields = [
+            ["Name", "name"],
+            ["Beschreibung", "description"],
+            ["Preis", "price"],
+            ["Kennzeichnung", "label"]
+        ];
+
+        fields.forEach(([label, key]) => {
+
+            const fieldLabel = document.createElement("label");
+
+            fieldLabel.className = "field-label";
+            fieldLabel.textContent = label;
+
+            const input = document.createElement("input");
+
+            input.value = product[key] || "";
+            input.dataset.index = index;
+            input.dataset.key = key;
+            input.className = "product-edit-field";
+
+            if (key === "name") {
+
+                input.addEventListener("input", () => {
+
+                    headingText.textContent =
+                        "Produkt " + (index + 1) + " – " +
+                        (input.value || "Ohne Namen");
+
+                });
+
+            }
+
+            fieldsContainer.append(fieldLabel, input);
+
+        });
+
+        /* BILD-UPLOAD */
+
+        const imageLabel = document.createElement("label");
+
+        imageLabel.className = "field-label";
+        imageLabel.textContent = "Produktbild vom PC auswählen";
+
+        const imageInput = document.createElement("input");
+
+        imageInput.type = "file";
+        imageInput.accept = "image/*";
+
+        const preview = document.createElement("img");
+
+        preview.className = "image-preview";
+        preview.alt = "Bildvorschau";
+
+        preview.style.display = product.image ? "block" : "none";
+
+        if (product.image) {
+            preview.src = product.image;
+        }
+
+        imageInput.addEventListener("change", () => {
+
+            const file = imageInput.files[0];
+
+            if (!file) return;
+
+            if (!file.type.startsWith("image/")) {
+
+                alert("Bitte wähle eine Bilddatei aus.");
+
+                imageInput.value = "";
+
+                return;
+
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+
+                alert("Das Bild ist zu groß. Bitte wähle ein Bild unter 2 MB.");
+
+                imageInput.value = "";
+
+                return;
+
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = () => {
+
+                data.products[index].image = reader.result;
+
+                preview.src = reader.result;
+
+                preview.style.display = "block";
+
+                document.getElementById("saveStatus").textContent =
+                    "Bild ausgewählt. Klicke auf Änderungen speichern.";
+
+            };
+
+            reader.readAsDataURL(file);
+
+        });
+
+        fieldsContainer.append(imageLabel, imageInput, preview);
+
+        /* PRODUKT LÖSCHEN */
+
+        const deleteButton = document.createElement("button");
+
+        deleteButton.className = "action-button delete-button";
+        deleteButton.textContent = "Produkt löschen";
+
+        deleteButton.onclick = () => {
+
+            collectProducts();
+
+            const id = data.products[index].id;
+
+            data.products.splice(index, 1);
+
+            cart = cart.filter(item => item.id !== id);
+
+            saveCart();
+
+            renderAdminProducts();
+
+            updateCart();
+
+        };
+
+        fieldsContainer.appendChild(deleteButton);
+
+        item.append(heading, fieldsContainer);
+
+        container.appendChild(item);
+
+    });
+
+}
+
+/* PRODUKTDATEN ÜBERNEHMEN */
+
+function collectProducts() {
+
+    document.querySelectorAll(".product-edit-field").forEach(input => {
+
+        const index = Number(input.dataset.index);
+
+        const key = input.dataset.key;
+
+        if (data.products[index]) {
+
+            data.products[index][key] = input.value;
+
+        }
+
+    });
+
+}
+
+/* NEUES PRODUKT */
+
+function addProduct() {
+
+    collectProducts();
+
+    data.products.push({
+
+        id: "p" + Date.now() + Math.random().toString(36).slice(2, 7),
+        name: "Neues Produkt",
+        description: "Hier steht deine Produktbeschreibung.",
+        price: "0,00 €",
+        image: "",
+        label: "Neu"
+
+    });
+
+    renderAdminProducts();
+
+}
+
+/* ALLES SPEICHERN */
+
+function saveAll() {
+
+    collectProducts();
+
+    data.footer = document.getElementById("editFooter").value;
+
+    try {
+
+        localStorage.setItem(
+            "glassStoreData",
+            JSON.stringify(data)
+        );
+
+        renderWebsite();
+
+        updateCart();
+
+        document.getElementById("saveStatus").textContent =
+            "✓ Änderungen und Produkte erfolgreich gespeichert!";
+
+    } catch (error) {
+
+        document.getElementById("saveStatus").textContent =
+            "Speichern fehlgeschlagen. Eventuell sind die Bilder zu groß.";
+
+    }
+
+}
+
+/* START */
+
+loadData();
+
+</script>
+
+</body>
+</html>
