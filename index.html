@@ -778,14 +778,21 @@ input[type="file"] {
             <span id="checkoutTotal">0,00 €</span>
         </div>
 
+        <label class="field-label" for="customerName">Dein Discord-Name</label>
+
+        <input type="text"
+               id="customerName"
+               maxlength="40"
+               placeholder="Kopiere deinen Discord-Namen hier rein">
+
         <p class="modal-description">
-            Wenn du auf den Button klickst, wird diese Liste (Artikel + Anzahl)
-            an unseren Discord-Server geschickt und du wirst zu Discord
-            weitergeleitet. Es wird keine Zahlung durchgeführt.
+            Mit deinem Discord-Namen öffnen wir dir ein eigenes Bestell-Ticket
+            auf unserem Discord-Server – nur du und das Team können es sehen.
+            Es wird keine Zahlung durchgeführt.
         </p>
 
         <button class="checkout-button" id="submitOrderButton" onclick="submitOrder()">
-            📋 Bestellung an Discord senden
+            🎫 Bestellung abschicken
         </button>
 
         <div class="status" id="orderStatus"></div>
@@ -1255,8 +1262,8 @@ function closeCheckout() {
 
 let orderBusy = false;
 
-function redirectToDiscord() {
-    window.location.href = DISCORD_CHANNEL_URL;
+function redirectToDiscord(targetUrl) {
+    window.location.href = targetUrl || DISCORD_CHANNEL_URL;
 }
 
 async function submitOrder() {
@@ -1269,6 +1276,15 @@ async function submitOrder() {
     if (cart.length === 0) {
         statusBox.style.color = "#ff8e9c";
         statusBox.textContent = "Dein Warenkorb ist leer.";
+        return;
+    }
+
+    const customerName = document.getElementById("customerName").value.trim();
+
+    if (customerName.length < 2) {
+        statusBox.style.color = "#ff8e9c";
+        statusBox.textContent = "Bitte kopiere deinen Discord-Namen in das Feld.";
+        document.getElementById("customerName").focus();
         return;
     }
 
@@ -1302,14 +1318,17 @@ async function submitOrder() {
     }
 
     statusBox.style.color = "";
-    statusBox.textContent = "Sende Bestellung an Discord…";
+    statusBox.textContent = "Dein Bestell-Ticket wird auf Discord angelegt…";
 
     try {
 
         const response = await fetch(API.order, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items: items })
+            body: JSON.stringify({
+                items: items,
+                customer: customerName
+            })
         });
 
         const result = await response.json();
@@ -1325,11 +1344,13 @@ async function submitOrder() {
         saveCart();
         updateCart();
 
+        const ticketUrl = (result && result.channelUrl) || DISCORD_CHANNEL_URL;
+
         statusBox.style.color = "";
         statusBox.textContent =
-            "✓ Bestellung gesendet! Du wirst gleich zu Discord weitergeleitet…";
+            "✓ Bestellung gesendet! Du wirst gleich zu deinem Ticket weitergeleitet…";
 
-        setTimeout(redirectToDiscord, 1500);
+        setTimeout(() => redirectToDiscord(ticketUrl), 1500);
 
     } catch (error) {
 
