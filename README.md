@@ -13,6 +13,27 @@ Unterstützt zwei Betriebsarten mit demselben Code:
 
 ---
 
+## Shop-Seite (index.html im Hauptordner)
+
+Die Startseite (Produkte, Footer-Text, Warenkorb) hat ihr eigenes Staff-Menü:
+einfach auf das **SHRED.-Logo oben links** klicken.
+
+- **Login** läuft über den Server (`/api/login`) – es gilt dasselbe Passwort wie
+  im Admin-Bereich (`ADMIN_PASSWORD`, Standard `shred-admin`).
+- **Änderungen speichern** schreibt den Footer-Text und alle Produkte
+  (inkl. Produktbildern) in den Online-Speicher – sie sind sofort für
+  **alle Besucher** sichtbar.
+- Produktbilder werden im Browser automatisch verkleinert und komprimiert
+  (max. 1000 Pixel, ~450 KB) und unter dem Schlüssel `shopImage:<id>` gespeichert;
+  die Shop-Daten liegen als JSON unter `shopData`.
+- Besucher sehen Änderungen automatisch (die Seite prüft alle 30 Sekunden),
+  ohne sie neu laden zu müssen.
+- Ist der Server nicht erreichbar (z. B. Datei direkt geöffnet), greift ein
+  Offline-Modus: Änderungen werden dann nur lokal im Browser gespeichert
+  (altes Verhalten, Passwort `67`).
+
+---
+
 ## 1. Lokal starten
 
 ```bash

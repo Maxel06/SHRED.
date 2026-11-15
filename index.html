@@ -524,6 +524,16 @@ input[type="file"] {
     margin-top: 10px;
 }
 
+.admin-mode-info {
+    padding: 11px 14px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 11px;
+    background: rgba(255,255,255,.06);
+    font-size: 13px;
+    line-height: 1.5;
+    color: #c3cee0;
+}
+
 @media(max-width:600px) {
     body {
         padding: 12px;
@@ -616,7 +626,8 @@ input[type="file"] {
         <h2>Staff Login</h2>
 
         <p class="modal-description">
-            Staff Password
+            Staff-Passwort eingeben. Nach dem Speichern sind deine
+            Änderungen sofort online für alle Besucher sichtbar.
         </p>
 
         <input
@@ -649,6 +660,8 @@ input[type="file"] {
         <p class="modal-description">
             Produktübersicht
         </p>
+
+        <div class="admin-mode-info" id="adminModeInfo"></div>
 
         <div class="admin-section">
 
@@ -847,6 +860,28 @@ let data = {
 };
 
 let cart = [];
+
+/* ONLINE-SPEICHERUNG (Änderungen für alle Besucher sichtbar) */
+
+const API = {
+    content: "/api/content",
+    login: "/api/login",
+    session: "/api/session"
+};
+
+const TOKEN_KEY = "shred-admin-token";
+const SHOP_DATA_KEY = "shopData";
+const SHOP_IMAGE_PREFIX = "shopImage:";
+
+let adminToken = null;
+let onlineMode = false;
+let remoteContent = {};
+let remoteShopDataRaw = null;
+let saveBusy = false;
+
+try {
+    adminToken = sessionStorage.getItem(TOKEN_KEY) || null;
+} catch (error) { /* sessionStorage nicht verfügbar */ }
 
 /* PREISE */
 
@@ -1186,9 +1221,230 @@ function closeCheckout() {
     document.getElementById("checkoutOverlay").classList.remove("active");
 }
 
+/* SERVER-VERBINDUNG & BILDER */
+
+async function apiPost(payload) {
+
+    const response = await fetch(API.content, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Admin-Token": adminToken
+        },
+        body: JSON.stringify(Object.assign({ token: adminToken }, payload))
+    });
+
+    let result = null;
+
+    try {
+        result = await response.json();
+    } catch (error) { /* keine JSON-Antwort */ }
+
+    if (!response.ok || !result || !result.ok) {
+
+        const requestError = new Error(
+            (result && result.error) || ("Serverfehler (" + response.status + ")")
+        );
+
+        requestError.status = response.status;
+
+        throw requestError;
+
+    }
+
+    return result;
+
+}
+
+/* BILD AUTOMATISCH VERKLEINERN (damit es online gespeichert werden kann) */
+
+function compressImage(file) {
+
+    return new Promise((resolve, reject) => {
+
+        const reader = new FileReader();
+
+        reader.onerror = () => reject(new Error("Datei nicht lesbar"));
+
+        reader.onload = () => {
+
+            const img = new Image();
+
+            img.onerror = () => reject(new Error("Kein gültiges Bild"));
+
+            img.onload = () => {
+
+                const maxSide = 1000;
+
+                const scale = Math.min(
+                    1,
+                    maxSide / Math.max(img.naturalWidth, img.naturalHeight)
+                );
+
+                const width = Math.max(1, Math.round(img.naturalWidth * scale));
+                const height = Math.max(1, Math.round(img.naturalHeight * scale));
+
+                const canvas = document.createElement("canvas");
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const context = canvas.getContext("2d");
+
+                const keepTransparency =
+                    file.type === "image/png" ||
+                    file.type === "image/webp" ||
+                    file.type === "image/gif" ||
+                    file.type === "image/svg+xml";
+
+                if (keepTransparency) {
+
+                    context.drawImage(img, 0, 0, width, height);
+
+                } else {
+
+                    context.fillStyle = "#ffffff";
+                    context.fillRect(0, 0, width, height);
+                    context.drawImage(img, 0, 0, width, height);
+
+                }
+
+                let imageData = canvas.toDataURL(
+                    keepTransparency ? "image/png" : "image/jpeg",
+                    0.82
+                );
+
+                /* PNG zu groß -> als JPEG mit weißem Hintergrund speichern */
+
+                if (imageData.length > 500000 && keepTransparency) {
+
+                    const jpegCanvas = document.createElement("canvas");
+
+                    jpegCanvas.width = width;
+                    jpegCanvas.height = height;
+
+                    const jpegContext = jpegCanvas.getContext("2d");
+
+                    jpegContext.fillStyle = "#ffffff";
+                    jpegContext.fillRect(0, 0, width, height);
+                    jpegContext.drawImage(img, 0, 0, width, height);
+
+                    imageData = jpegCanvas.toDataURL("image/jpeg", 0.82);
+
+                }
+
+                resolve(imageData);
+
+            };
+
+            img.src = reader.result;
+
+        };
+
+        reader.readAsDataURL(file);
+
+    });
+
+}
+
+/* SERVER-DATEN LADEN (für alle Besucher sichtbare Inhalte) */
+
+function resolveServerImage(image) {
+
+    if (typeof image !== "string" || image === "") return "";
+
+    if (image.startsWith("@")) {
+
+        const value = remoteContent[SHOP_IMAGE_PREFIX + image.slice(1)];
+
+        return typeof value === "string" ? value : "";
+
+    }
+
+    return image;
+
+}
+
+async function loadFromServer() {
+
+    try {
+
+        const response = await fetch(API.content, {
+            headers: { "Accept": "application/json" }
+        });
+
+        const result = await response.json();
+
+        if (!result || !result.ok) return;
+
+        remoteContent = result.content || {};
+
+        const raw = remoteContent[SHOP_DATA_KEY];
+
+        if (typeof raw !== "string" || raw === "" || raw === remoteShopDataRaw) return;
+
+        let parsed;
+
+        try {
+            parsed = JSON.parse(raw);
+        } catch (error) {
+            return;
+        }
+
+        if (!parsed || !Array.isArray(parsed.products)) return;
+
+        remoteShopDataRaw = raw;
+
+        parsed.products.forEach((product, index) => {
+
+            if (!product.id) product.id = "p" + (index + 1);
+
+            if (typeof product.image !== "string") product.image = "";
+
+            product.image = resolveServerImage(product.image);
+
+        });
+
+        data = {
+            footer: typeof parsed.footer === "string" ? parsed.footer : data.footer,
+            products: parsed.products
+        };
+
+        renderWebsite();
+
+        updateCart();
+
+    } catch (error) {
+        /* Server nicht erreichbar -> lokale Daten bleiben aktiv */
+    }
+
+}
+
+/* AUTOMATISCH AKTUALISIEREN (Besucher sehen Änderungen ohne Neuladen) */
+
+function startAutoRefresh() {
+
+    setInterval(() => {
+
+        if (document.hidden) return;
+
+        if (document.querySelector(".overlay.active")) return;
+
+        loadFromServer();
+
+    }, 30000);
+
+    document.addEventListener("visibilitychange", () => {
+
+        if (!document.hidden) loadFromServer();
+
+    });
+
+}
+
 /* LOGIN */
 
-function openLogin() {
+async function openLogin() {
 
     document.getElementById("loginOverlay").classList.add("active");
 
@@ -1196,25 +1452,99 @@ function openLogin() {
 
     document.getElementById("loginError").textContent = "";
 
+    /* Gespeicherte Sitzung prüfen -> direkt ins Staff-Menü springen */
+
+    if (adminToken) {
+
+        try {
+
+            const response = await fetch(API.session, {
+                headers: { "X-Admin-Token": adminToken }
+            });
+
+            const result = await response.json();
+
+            if (result && result.ok) {
+                onlineMode = true;
+                closeLogin();
+                openAdmin();
+                return;
+            }
+
+            adminToken = null;
+
+            try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+
+        } catch (error) {
+            /* Server nicht erreichbar -> Passwortfeld bleibt offen */
+        }
+
+    }
+
 }
 
 function closeLogin() {
     document.getElementById("loginOverlay").classList.remove("active");
 }
 
-function checkPassword() {
+async function checkPassword() {
 
     const password = document.getElementById("passwordInput").value;
 
-    if (password === "67") {
+    const errorBox = document.getElementById("loginError");
 
-        closeLogin();
-        openAdmin();
+    errorBox.textContent = "";
 
-    } else {
+    if (!password) {
+        errorBox.textContent = "Bitte gib ein Passwort ein.";
+        return;
+    }
 
-        document.getElementById("loginError").textContent =
-            "❌ Falsches Passwort!";
+    try {
+
+        const response = await fetch(API.login, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result && result.ok) {
+
+            adminToken = result.token;
+
+            try {
+                sessionStorage.setItem(TOKEN_KEY, adminToken);
+            } catch (error) { /* ignorieren */ }
+
+            onlineMode = true;
+
+            closeLogin();
+            openAdmin();
+
+            return;
+
+        }
+
+        errorBox.textContent = "❌ Falsches Passwort!";
+
+    } catch (networkError) {
+
+        /* Server nicht erreichbar -> Offline-Modus mit altem Passwort */
+
+        if (password === "67") {
+
+            onlineMode = false;
+
+            closeLogin();
+            openAdmin();
+
+        } else {
+
+            errorBox.textContent = "❌ Falsches Passwort!";
+
+        }
 
     }
 
@@ -1229,6 +1559,20 @@ function openAdmin() {
     document.getElementById("editFooter").value = data.footer;
 
     document.getElementById("saveStatus").textContent = "";
+
+    const modeInfo = document.getElementById("adminModeInfo");
+
+    if (modeInfo) {
+
+        if (onlineMode) {
+            modeInfo.textContent =
+                "🟢 Online: Deine Änderungen werden beim Speichern für alle Besucher übernommen.";
+        } else {
+            modeInfo.textContent =
+                "🟡 Offline: Server nicht erreichbar – Änderungen werden nur in diesem Browser gespeichert.";
+        }
+
+    }
 
     renderAdminProducts();
 
@@ -1372,9 +1716,9 @@ function renderAdminProducts() {
 
             }
 
-            if (file.size > 2 * 1024 * 1024) {
+            if (file.size > 8 * 1024 * 1024) {
 
-                alert("Das Bild ist zu groß. Bitte wähle ein Bild unter 2 MB.");
+                alert("Das Bild ist zu groß. Bitte wähle ein Bild unter 8 MB.");
 
                 imageInput.value = "";
 
@@ -1382,22 +1726,30 @@ function renderAdminProducts() {
 
             }
 
-            const reader = new FileReader();
+            compressImage(file).then(imageData => {
 
-            reader.onload = () => {
+                if (imageData.length > 500000) {
 
-                data.products[index].image = reader.result;
+                    alert("Das Bild ist auch nach automatischer Komprimierung zu groß. Bitte wähle ein kleineres Bild.");
 
-                preview.src = reader.result;
+                    return;
+
+                }
+
+                data.products[index].image = imageData;
+
+                preview.src = imageData;
 
                 preview.style.display = "block";
 
                 document.getElementById("saveStatus").textContent =
                     "Bild ausgewählt. Klicke auf Änderungen speichern.";
 
-            };
+            }).catch(() => {
 
-            reader.readAsDataURL(file);
+                alert("Das Bild konnte nicht geladen werden.");
+
+            });
 
         });
 
@@ -1481,30 +1833,182 @@ function addProduct() {
 
 /* ALLES SPEICHERN */
 
-function saveAll() {
+async function saveAll() {
+
+    if (saveBusy) return;
 
     collectProducts();
 
     data.footer = document.getElementById("editFooter").value;
 
+    const statusBox = document.getElementById("saveStatus");
+
+    /* Lokale Kopie als Offline-Backup */
+
     try {
 
-        localStorage.setItem(
-            "glassStoreData",
-            JSON.stringify(data)
+        localStorage.setItem("glassStoreData", JSON.stringify(data));
+
+    } catch (error) { /* Speicher voll -> ignorieren */ }
+
+    renderWebsite();
+
+    updateCart();
+
+    if (!onlineMode || !adminToken) {
+
+        statusBox.textContent =
+            "✓ Lokal gespeichert – Änderungen sind nur in diesem Browser sichtbar.";
+
+        return;
+
+    }
+
+    saveBusy = true;
+
+    statusBox.textContent = "Speichere online…";
+
+    try {
+
+        /* 1) Neue/geänderte Bilder hochladen, alte löschen */
+
+        const imageUpdates = {};
+
+        const neededImageKeys = new Set();
+
+        data.products.forEach(product => {
+
+            const image = typeof product.image === "string" ? product.image : "";
+
+            if (image.startsWith("data:")) {
+
+                const key = SHOP_IMAGE_PREFIX + product.id;
+
+                imageUpdates[key] = image;
+                neededImageKeys.add(key);
+
+            } else if (image.startsWith("@")) {
+
+                neededImageKeys.add(SHOP_IMAGE_PREFIX + image.slice(1));
+
+            }
+
+        });
+
+        const imageDeletes = Object.keys(remoteContent).filter(
+            key => key.startsWith(SHOP_IMAGE_PREFIX) && !neededImageKeys.has(key)
         );
 
-        renderWebsite();
+        /* Bilder in kleinen Batches hochladen (max. ca. 1,2 MB pro Anfrage) */
 
-        updateCart();
+        const imageEntries = Object.entries(imageUpdates);
 
-        document.getElementById("saveStatus").textContent =
-            "✓ Änderungen und Produkte erfolgreich gespeichert!";
+        const batches = [];
+
+        let currentBatch = {};
+        let batchSize = 0;
+
+        imageEntries.forEach(([key, value]) => {
+
+            if (batchSize + value.length > 1200000 && Object.keys(currentBatch).length > 0) {
+                batches.push(currentBatch);
+                currentBatch = {};
+                batchSize = 0;
+            }
+
+            currentBatch[key] = value;
+            batchSize += value.length;
+
+        });
+
+        if (Object.keys(currentBatch).length > 0) batches.push(currentBatch);
+
+        if (batches.length > 0 || imageDeletes.length > 0) {
+
+            /* Löschen nur einmal mitschicken (beim ersten Batch) */
+
+            if (batches.length === 0) batches.push({});
+
+            for (let i = 0; i < batches.length; i++) {
+
+                const imageResult = await apiPost({
+                    updates: batches[i],
+                    deletes: i === 0 ? imageDeletes : []
+                });
+
+                if (imageResult && imageResult.content) {
+                    remoteContent = imageResult.content;
+                }
+
+            }
+
+        }
+
+        /* 2) Shop-Daten online speichern (Bilder als Verweis) */
+
+        const shopData = {
+
+            footer: data.footer,
+
+            products: data.products.map(product => {
+
+                const image = typeof product.image === "string" ? product.image : "";
+
+                return {
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    price: product.price,
+                    label: product.label,
+                    image: image.startsWith("data:") ? "@" + product.id : image
+                };
+
+            })
+
+        };
+
+        const result = await apiPost({
+            updates: { [SHOP_DATA_KEY]: JSON.stringify(shopData) },
+            deletes: []
+        });
+
+        if (result && result.content) {
+            remoteContent = result.content;
+        }
+
+        remoteShopDataRaw =
+            (result && result.content && result.content[SHOP_DATA_KEY]) || null;
+
+        statusBox.textContent =
+            "✓ Online gespeichert – Änderungen sind jetzt für alle Besucher sichtbar!";
 
     } catch (error) {
 
-        document.getElementById("saveStatus").textContent =
-            "Speichern fehlgeschlagen. Eventuell sind die Bilder zu groß.";
+        if (error && error.status === 401) {
+
+            onlineMode = false;
+            adminToken = null;
+
+            try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+
+            statusBox.textContent =
+                "Sitzung abgelaufen – bitte melde dich neu an.";
+
+            closeAdmin();
+            openLogin();
+
+        } else {
+
+            statusBox.textContent =
+                "Online-Speichern fehlgeschlagen: " +
+                ((error && error.message) || "Unbekannter Fehler") +
+                " Deine Änderungen sind lokal gesichert.";
+
+        }
+
+    } finally {
+
+        saveBusy = false;
 
     }
 
@@ -1513,6 +2017,10 @@ function saveAll() {
 /* START */
 
 loadData();
+
+loadFromServer();
+
+startAutoRefresh();
 
 </script>
 
