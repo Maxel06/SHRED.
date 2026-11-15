@@ -1,1116 +1,1520 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SHRED.</title>
+
 <style>
-.infoleiste {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 10000px;
-
-    padding: 40px;
-
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.25),
-        inset 0 1px 1px rgba(255, 255, 255, 0.15);
-		position: absolute;
-		transform: translate(-50%, -50%);
-		top: 5vw;
-		left: 50%;
-		width:80vw;
-}
-
-html, body {
-    width: 100%;
-    min-height: 100%;
+* {
+    box-sizing: border-box;
     margin: 0;
+    padding: 0;
 }
 
 body {
     min-height: 100vh;
-    background-image: url("hintergrund.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    font-family: Arial, sans-serif;
+    color: #f5f7ff;
+    background-color:#504e5c;
+    padding: 25px;
 }
 
-/* ============================================================
-   ADMIN-OBERFLÄCHE (Passwort-Fenster + Panel)
-   ============================================================ */
-
-.admin-ui {
-    font-family: Bahnschrift, "Segoe UI", system-ui, sans-serif;
-    color: #f2f2f5;
-    z-index: 999999;
+.glass {
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
 }
 
-/* --- Passwort-Fenster --- */
-.admin-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+/* HEADER */
+
+header {
+    max-width: 1450px;
+    margin: auto;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-radius: 20px;
+    gap: 20px;
+}
+
+.brand-group {
+    display: flex;
+    align-items: center;
+}
+
+.admin-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
-    z-index: 1000000;
-}
-
-.admin-dialog {
-    width: min(420px, 100%);
-    background: rgba(24, 24, 28, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 22px;
-    padding: 26px 26px 22px;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
-    animation: adminPop 0.18s ease-out;
-}
-
-@keyframes adminPop {
-    from { transform: translateY(10px) scale(0.98); opacity: 0; }
-    to   { transform: none; opacity: 1; }
-}
-
-.admin-dialog h2 {
-    margin: 0 0 6px;
-    font-size: 20px;
-    letter-spacing: 0.04em;
-}
-
-.admin-dialog p {
-    margin: 0 0 16px;
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.62);
-}
-
-.admin-input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 13px 15px;
-    font: inherit;
-    font-size: 15px;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 12px;
-    outline: none;
-    transition: border-color 0.15s, background 0.15s;
-}
-
-.admin-input:focus {
-    border-color: rgba(255, 255, 255, 0.55);
-    background: rgba(255, 255, 255, 0.12);
-}
-
-.admin-error {
-    min-height: 18px;
-    margin-top: 8px;
-    font-size: 13px;
-    color: #ff8d8d;
-}
-
-.admin-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-}
-
-.admin-btn {
-    flex: 1;
-    padding: 12px 16px;
-    font: inherit;
-    font-size: 14px;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.15s, transform 0.05s;
-}
-
-.admin-btn:hover { background: rgba(255, 255, 255, 0.18); }
-.admin-btn:active { transform: scale(0.985); }
-
-.admin-btn.primary {
-    background: #fff;
-    color: #111;
-    border-color: #fff;
-    font-weight: 600;
-}
-
-.admin-btn.primary:hover { background: #e9e9e9; }
-
-/* --- Bearbeitungs-Panel --- */
-.admin-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    height: 100dvh;
-    width: min(420px, 100vw);
-    display: flex;
-    flex-direction: column;
-    background: rgba(18, 18, 22, 0.94);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border-left: 1px solid rgba(255, 255, 255, 0.14);
-    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.45);
-    animation: adminSlide 0.22s ease-out;
-}
-
-@keyframes adminSlide {
-    from { transform: translateX(30px); opacity: 0; }
-    to   { transform: none; opacity: 1; }
-}
-
-.admin-panel-head {
-    padding: 18px 20px 14px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.admin-panel-head .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.admin-panel-head h2 {
-    margin: 0;
-    font-size: 17px;
-    letter-spacing: 0.06em;
-}
-
-.admin-close {
-    flex: 0 0 auto;
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    font-size: 18px;
-    line-height: 1;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 50%;
-    cursor: pointer;
-}
-
-.admin-close:hover { background: rgba(255, 255, 255, 0.2); }
-
-.admin-toolbar {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.admin-toolbar .admin-input { padding: 9px 12px; font-size: 13px; }
-
-.admin-note {
-    margin: 10px 0 0;
-    font-size: 12px;
-    line-height: 1.5;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.admin-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 20px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.admin-item label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.55);
-}
-
-.admin-item label .tag {
-    color: #9fd3ff;
-    text-transform: none;
-}
-
-.admin-item label .cls {
-    color: #ffd39f;
-    text-transform: none;
-}
-
-.admin-item textarea {
-    width: 100%;
-    box-sizing: border-box;
-    min-height: 44px;
-    resize: vertical;
-    padding: 11px 13px;
-    font: inherit;
-    font-size: 14px;
-    line-height: 1.45;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    outline: none;
-}
-
-.admin-item textarea:focus {
-    border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.11);
-}
-
-.admin-item .footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 5px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.42);
-}
-
-.admin-link {
     background: none;
     border: none;
-    padding: 0;
-    font: inherit;
-    font-size: 11px;
-    color: #9fd3ff;
     cursor: pointer;
-    text-decoration: underline;
+    padding: 0;
 }
 
-.admin-panel-foot {
+.admin-button:hover {
+    transform: scale(1.03);
+}
+
+.brand-logo {
+    width: 300px;
+    max-width: 55vw;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.header-actions {
     display: flex;
-    gap: 8px;
-    padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(12, 12, 15, 0.7);
+    align-items: center;
+    gap: 18px;
 }
 
-.admin-panel-foot .admin-btn { font-size: 13px; padding: 11px 12px; }
-
-.admin-status {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.45);
-    padding: 0 20px 10px;
-    min-height: 14px;
+.discord-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
-.admin-status.ok { color: #8fe1a3; }
-.admin-status.err { color: #ff8d8d; }
-
-/* Markierung der bearbeitbaren Elemente, wenn Admin-Modus an ist */
-body.admin-mode [data-editable="1"] {
-    outline: 1px dashed rgba(159, 211, 255, 0.55);
-    outline-offset: 3px;
-    border-radius: 4px;
-    cursor: text;
+.discord-link img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 50%;
+    display: block;
+    transition: .2s;
 }
 
-body.admin-mode [data-editable="1"]:hover {
-    outline-color: rgba(159, 211, 255, 1);
-    background: rgba(159, 211, 255, 0.08);
+.discord-link:hover img {
+    transform: scale(1.12);
 }
 
-.admin-toast {
-    position: fixed;
-    left: 50%;
-    bottom: 26px;
-    transform: translateX(-50%);
-    padding: 11px 20px;
+/* WARENKORB BUTTON */
+
+.cart-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 55px;
+    height: 55px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 15px;
+    background: rgba(255,255,255,.1);
+    color: white;
+    font-size: 25px;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.cart-button:hover {
+    background: rgba(255,255,255,.2);
+    transform: scale(1.06);
+}
+
+.cart-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 21px;
+    height: 21px;
+    padding: 2px 5px;
+    border-radius: 20px;
+    background: gray;
+    color: black;
+    font-size: 12px;
+    font-weight: bold;
+    display: grid;
+    place-items: center;
+}
+
+/* PRODUKTE */
+
+.products-section {
+    max-width: 1450px;
+    margin: 30px auto 0;
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 22px;
+}
+
+.product {
+    border-radius: 22px;
+    padding: 18px;
+    transition: .25s;
+    overflow: hidden;
+}
+
+.product:hover {
+    transform: translateY(-7px);
+    border-color: rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.13);
+}
+
+.product-visual {
+    height: 190px;
+    border-radius: 15px;
+    background-color:#504e5c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 18px;
+    color: #b8c8e0;
+    font-size: 14px;
+}
+
+.product-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.product h3 {
+    font-size: 19px;
+    margin-bottom: 9px;
+    color: black;
+}
+
+.product p {
+    color: black;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 42px;
+}
+
+.price {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 17px;
+    color: black;
+}
+
+.product-label {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 7px 12px;
+    border-radius: 9px;
+    background: gray;
+    font-size: 12px;
+    color: black;
+}
+
+.add-cart-button {
+    width: 100%;
+    margin-top: 16px;
+    padding: 13px;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 12px;
+    background: gray;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.add-cart-button:hover {
+    background: #c5c9ed;
+    transform: translateY(-2px);
+}
+
+/* FOOTER */
+
+footer {
+    max-width: 1450px;
+    margin: 60px auto 10px;
+    padding: 20px;
+    text-align: center;
+    color: #8191aa;
     font-size: 13px;
-    color: #111;
-    background: #fff;
-    border-radius: 10000px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    z-index: 1000001;
-    animation: adminPop 0.18s ease-out;
+}
+
+/* POPUPS */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(10px);
+}
+
+.overlay.active {
+    display: flex;
+}
+
+.modal {
+    width: 100%;
+    max-width: 440px;
+    padding: 30px;
+    border-radius: 24px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal h2 {
+    margin-bottom: 10px;
+}
+
+.modal-description {
+    color: #aebbd1;
+    margin-bottom: 22px;
+    font-size: 14px;
+}
+
+/* INPUTS */
+
+input, textarea {
+    width: 100%;
+    padding: 13px;
+    margin: 8px 0 15px;
+    color: white;
+    background: rgba(0,0,0,.25);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 11px;
+    outline: none;
+    font-family: inherit;
+}
+
+input:focus, textarea:focus {
+    border-color: #8bd5ff;
+}
+
+input::placeholder, textarea::placeholder {
+    color: #8b9ab1;
+}
+
+input[type="file"] {
+    padding: 10px;
+    font-size: 13px;
+}
+
+/* BUTTONS */
+
+.action-button {
+    padding: 12px 17px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 11px;
+    background: black;
+    color: white;
+    cursor: pointer;
+    margin: 5px 4px 5px 0;
+    transition: .2s;
+}
+
+.action-button:hover {
+    background: #c5c9ed;
+}
+
+.close-button {
+    background: rgba(255,255,255,.08);
+}
+
+.delete-button {
+    background: rgba(255,80,100,.2);
+}
+
+/* WARENKORB */
+
+.cart-modal {
+    max-width: 550px;
+}
+
+.cart-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.cart-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 13px;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 15px;
+    background: rgba(255,255,255,.06);
+}
+
+.cart-item img {
+    width: 65px;
+    height: 65px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: rgba(255,255,255,.08);
+}
+
+.cart-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cart-item-info h3 {
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.cart-item-info p {
+    color: #aebbd1;
+    font-size: 13px;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 9px;
+}
+
+.quantity-controls button {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 7px;
+    background: rgba(255,255,255,.12);
+    color: white;
+    cursor: pointer;
+}
+
+.remove-cart {
+    border: none;
+    background: transparent;
+    color: #ff8795;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+}
+
+.cart-empty {
+    text-align: center;
+    padding: 35px 10px;
+    color: #aebbd1;
+}
+
+.cart-total {
+    display: flex;
+    justify-content: space-between;
+    padding: 18px 0;
+    border-top: 1px solid rgba(255,255,255,.2);
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.checkout-button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    background-color: gray;
+    color: #07111e;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.checkout-button:hover {
+    background: #c5c9ed;
+}
+
+/* ADMIN */
+
+.admin-modal {
+    max-width: 750px;
+}
+
+.admin-section {
+    padding: 12px 16px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 15px;
+    margin-top: 17px;
+    background: rgba(255,255,255,.035);
+}
+
+.admin-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 0;
+    color: white;
+    background: transparent;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.admin-toggle:hover {
+    color: #a9d9ff;
+}
+
+.toggle-symbol {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: rgba(255,255,255,.12);
+    font-size: 20px;
+}
+
+.admin-section-content {
+    padding-top: 10px;
+}
+
+.admin-product {
+    padding: 12px 0;
+    border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.product-toggle {
+    font-size: 15px;
+}
+
+.product-fields[hidden],
+.admin-section-content[hidden] {
+    display: none !important;
+}
+
+.field-label {
+    display: block;
+    font-size: 13px;
+    color: #c3cee0;
+    margin-top: 8px;
+}
+
+.image-preview {
+    width: 100%;
+    height: 130px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: rgba(255,255,255,.06);
+    margin: 5px 0 10px;
+}
+
+.error {
+    color: #ff8e9c;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.status {
+    color: #9de5b5;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+@media(max-width:600px) {
+    body {
+        padding: 12px;
+    }
+
+    .topbar {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .brand-logo {
+        width: 190px;
+    }
+
+    .discord-link img {
+        width: 38px;
+        height: 38px;
+    }
+
+    .header-actions {
+        gap: 9px;
+    }
+
+    .cart-button {
+        width: 42px;
+        height: 42px;
+        font-size: 21px;
+    }
+
+    .modal {
+        padding: 20px;
+    }
 }
 </style>
 </head>
-<body>
-<div class="infoleiste">
 
-<a href="https://discord.gg/MN5SWC8ENk">
-<img src="discord-logo.jpg" width="90vw" style="border-radius:10000px";>
-</a>
-		
-<h1 style="top:33%;
-	left:50%;
-	transform:translate(-50%, -50%);
-	position:absolute;
-	font-size:1.5vw;
-	font-family:Bahnschrift;">Alles auf Lager</h1>
-	
-	<img src="schriftzug.png" width="150vw" style="top:50%;
-	left:79vw;
-	transform:translate(-50%, -50%);
-	position:absolute;">
+<body>
+
+<header>
+    <div class="topbar glass">
+
+        <div class="brand-group">
+            <button class="admin-button"
+                    onclick="openLogin()"
+                    aria-label="Staff Login">
+
+                <img class="brand-logo"
+                     src="schriftzug.png"
+                     alt="SHRED.">
+
+            </button>
+        </div>
+
+        <div class="header-actions">
+
+            <button class="cart-button" onclick="openCart()">
+                🛒
+                <span class="cart-count" id="cartCount">0</span>
+            </button>
+
+            <a class="discord-link"
+               href="https://discord.gg/zUdZxqW6c5"
+               target="_blank"
+               rel="noopener noreferrer">
+
+                <img src="Discord-logo.png" alt="Discord">
+
+            </a>
+
+        </div>
+
+    </div>
+</header>
+
+<main>
+    <section class="products-section">
+        <div class="product-grid" id="productGrid"></div>
+    </section>
+</main>
+
+<footer>
+    <span id="footerText"></span>
+</footer>
+
+<!-- LOGIN -->
+
+<div class="overlay" id="loginOverlay">
+    <div class="modal glass">
+
+        <h2>Staff Login</h2>
+
+        <p class="modal-description">
+            Staff Password
+        </p>
+
+        <input
+            type="password"
+            id="passwordInput"
+            placeholder="Passwort eingeben"
+            onkeydown="if(event.key==='Enter') checkPassword()"
+        >
+
+        <button class="action-button" onclick="checkPassword()">
+            Anmelden
+        </button>
+
+        <button class="action-button close-button" onclick="closeLogin()">
+            Abbrechen
+        </button>
+
+        <div class="error" id="loginError"></div>
+
+    </div>
+</div>
+
+<!-- STAFF MENÜ -->
+
+<div class="overlay" id="adminOverlay">
+    <div class="modal admin-modal glass">
+
+        <h2>Staff</h2>
+
+        <p class="modal-description">
+            Produktübersicht
+        </p>
+
+        <div class="admin-section">
+
+            <button class="admin-toggle"
+                    onclick="toggleAdminSection('footerFields', this)">
+
+                <span>Footer-Text</span>
+                <span class="toggle-symbol">＋</span>
+
+            </button>
+
+            <div class="admin-section-content" id="footerFields" hidden>
+                <input id="editFooter">
+            </div>
+
+        </div>
+
+        <div class="admin-section">
+
+            <button class="admin-toggle"
+                    onclick="toggleAdminSection('productsFields', this)">
+
+                <span>Produkte bearbeiten</span>
+                <span class="toggle-symbol">＋</span>
+
+            </button>
+
+            <div class="admin-section-content" id="productsFields" hidden>
+
+                <div id="adminProducts"></div>
+
+                <button class="action-button" onclick="addProduct()">
+                    + Produkt hinzufügen
+                </button>
+
+            </div>
+
+        </div>
+
+        <div style="margin-top:20px">
+
+            <button class="action-button" onclick="saveAll()">
+                Änderungen speichern
+            </button>
+
+            <button class="action-button close-button" onclick="closeAdmin()">
+                Schließen
+            </button>
+
+            <div class="status" id="saveStatus"></div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- WARENKORB -->
+
+<div class="overlay" id="cartOverlay">
+
+    <div class="modal cart-modal glass">
+
+        <h2>Dein Warenkorb</h2>
+
+        <p class="modal-description">
+            Deine ausgewählten SHRED.-Produkte
+        </p>
+
+        <div class="cart-items" id="cartItems"></div>
+
+        <div class="cart-total">
+            <span>Gesamtpreis:</span>
+            <span id="cartTotal">0,00 €</span>
+        </div>
+
+        <button class="checkout-button" onclick="openCheckout()">
+            Zur Kasse gehen
+        </button>
+
+        <button class="action-button close-button" onclick="closeCart()">
+            Weiter einkaufen
+        </button>
+
+    </div>
 
 </div>
 
-		<button class="adminpanel" id="adminpanel" data-no-edit style="   background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+<!-- CHECKOUT -->
 
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 10000px;
+<div class="overlay" id="checkoutOverlay">
 
-    padding: 35px;
+    <div class="modal glass">
 
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.25),
-        inset 0 1px 1px rgba(255, 255, 255, 0.15);
-		position: absolute;
-		transform: translate(-50%, -50%);
-		top: 5vw;
-		left: 96vw;
-		z-index: 100000;
-			"><img src="logo.png" width="65vw"></button>
+        <h2>Bestellübersicht</h2>
 
-<!-- ============================================================
-     ADMIN
-     ============================================================ -->
+        <p class="modal-description">
+            Überprüfe deine Bestellung.
+        </p>
+
+        <div id="checkoutItems"></div>
+
+        <div class="cart-total">
+            <span>Gesamt:</span>
+            <span id="checkoutTotal">0,00 €</span>
+        </div>
+
+        <p class="modal-description">
+            Dies ist zunächst nur eine Bestellübersicht.
+            Es wird keine Zahlung durchgeführt.
+        </p>
+
+        <button class="action-button close-button" onclick="closeCheckout()">
+            Zurück
+        </button>
+
+    </div>
+
+</div>
+
 <script>
-(function () {
-    "use strict";
 
-    /* ==========================================================
-       1) EINSTELLUNGEN – hier anpassen
-       ========================================================== */
+/* STANDARD PRODUKTE */
 
-    var ADMIN_CONFIG = {
-        /*
-         * Welche Elemente dürfen bearbeitet werden?
-         *
-         * LEER  = ALLE Textelemente der Seite sind bearbeitbar.
-         *
-         * Oder gezielt Klassen angeben, z. B.:
-         *   editableClasses: ["editierbar", "preis", "titel"]
-         *
-         * Dann sind alle Elemente mit einer dieser Klassen (und deren
-         * Inhalt) bearbeitbar. Einzelne Elemente ausnehmen:
-         *   <h1 data-no-edit>...</h1>
-         */
-        editableClasses: [],
-
-        /** Texte automatisch alle X ms neu laden (0 = aus) */
-        pollInterval: 30000,
-
-        /** API-Pfade (normalerweise nicht ändern) */
-        api: {
-            content: "/api/content",
-            login: "/api/login",
-            session: "/api/session",
-            logout: "/api/logout"
-        },
-
-        /** localStorage-Schlüssel für den Login-Token */
-        tokenKey: "shred-admin-token"
-    };
-
-    /* ==========================================================
-       2) HILFSFUNKTIONEN
-       ========================================================== */
-
-    var TOKEN = null;
-    try { TOKEN = sessionStorage.getItem(ADMIN_CONFIG.tokenKey); } catch (e) {}
-
-    var state = {
-        remote: {},        // gespeicherte Texte vom Server
-        originals: {},     // Texte wie sie in der HTML-Datei stehen
-        entries: [],       // bearbeitbare Elemente
-        lastUpdatedAt: null,
-        pollTimer: null,
-        saving: false
-    };
-
-    function $(sel, root) { return (root || document).querySelector(sel); }
-
-    function el(tag, className, text) {
-        var n = document.createElement(tag);
-        if (className) n.className = className;
-        if (text != null) n.textContent = text;
-        return n;
+const defaultProducts = [
+    {
+        id: "p1",
+        name: "Premium Headphones",
+        description: "Hochwertiger Sound und modernes Design.",
+        price: "89,99 €",
+        image: "",
+        label: "Bestseller"
+    },
+    {
+        id: "p2",
+        name: "Smart Watch",
+        description: "Dein Alltag, intelligent organisiert.",
+        price: "129,99 €",
+        image: "",
+        label: "Neu"
+    },
+    {
+        id: "p3",
+        name: "Gaming Keyboard",
+        description: "Präzision und Style beim Gaming.",
+        price: "74,99 €",
+        image: "",
+        label: "Beliebt"
+    },
+    {
+        id: "p4",
+        name: "Wireless Speaker",
+        description: "Klarer Sound für jeden Moment.",
+        price: "59,99 €",
+        image: "",
+        label: "Highlight"
+    },
+    {
+        id: "p5",
+        name: "Gaming Mouse",
+        description: "Komfort und Kontrolle beim Gaming.",
+        price: "39,99 €",
+        image: "",
+        label: "Bestseller"
+    },
+    {
+        id: "p6",
+        name: "VR Headset",
+        description: "Tauche in neue virtuelle Welten ein.",
+        price: "299,99 €",
+        image: "",
+        label: "Premium"
+    },
+    {
+        id: "p7",
+        name: "Tablet",
+        description: "Entertainment und Produktivität überall.",
+        price: "199,99 €",
+        image: "",
+        label: "Neu"
+    },
+    {
+        id: "p8",
+        name: "Laptop",
+        description: "Leistung für Arbeit, Schule und Freizeit.",
+        price: "699,99 €",
+        image: "",
+        label: "Premium"
     }
+];
 
-    function toast(message) {
-        var t = el("div", "admin-ui admin-toast", message);
-        document.body.appendChild(t);
-        setTimeout(function () {
-            t.style.transition = "opacity .25s";
-            t.style.opacity = "0";
-            setTimeout(function () { t.remove(); }, 260);
-        }, 2000);
-    }
+/* WEBSITE DATEN */
 
-    /** Direkte Textknoten eines Elements (ohne Kind-Elemente) */
-    function directText(el) {
-        var out = "";
-        for (var i = 0; i < el.childNodes.length; i++) {
-            var n = el.childNodes[i];
-            if (n.nodeType === 3) out += n.nodeValue;
-        }
-        return out;
-    }
+let data = {
+    footer: "© 2026 SHRED. – Alle Rechte vorbehalten.",
+    products: defaultProducts
+};
 
-    /** Ersetzt die direkten Textknoten, Kind-Elemente (Bilder etc.) bleiben! */
-    function setDirectText(node, text) {
-        var first = null;
-        for (var i = 0; i < node.childNodes.length; i++) {
-            var n = node.childNodes[i];
-            if (n.nodeType === 3) {
-                if (!first) { first = n; n.nodeValue = text; }
-                else { n.nodeValue = ""; }
-            }
-        }
-        if (!first) node.appendChild(document.createTextNode(text));
-    }
+let cart = [];
 
-    /**
-     * Stabiler Schlüssel für ein Element, z. B. "div[1]/h1[1]".
-     * Hängt NICHT an Klassen oder IDs – die kann man also ändern.
-     */
-    function pathKey(node) {
-        var parts = [];
-        var current = node;
-        while (current && current.nodeType === 1 && current !== document.body) {
-            var index = 1;
-            var sib = current;
-            while ((sib = sib.previousElementSibling)) {
-                if (sib.tagName === current.tagName) index++;
-            }
-            var id = current.tagName.toLowerCase() + "[" + index + "]";
-            // eigene data-edit-id hat Vorrang und bleibt dauerhaft stabil
-            if (current.getAttribute && current.getAttribute("data-edit-id")) {
-                id = current.tagName.toLowerCase() + "#" + current.getAttribute("data-edit-id");
-            }
-            parts.unshift(id);
-            current = current.parentElement;
-        }
-        return parts.join("/");
-    }
+/* PREISE */
 
-    function resolveKey(key) {
-        if (!key) return null;
-        var parts = key.split("/");
-        var current = document.body;
-        for (var i = 0; i < parts.length; i++) {
-            var part = parts[i];
-            var m = part.match(/^([a-z0-9-]+)(?:\[(\d+)\]|#(.+))?$/i);
-            if (!m) return null;
-            var tag = m[1].toUpperCase();
+function parsePrice(price) {
+    if (typeof price === "number") return price;
 
-            if (m[3]) {
-                // per data-edit-id suchen
-                var found = null;
-                for (var k = 0; k < current.children.length; k++) {
-                    if (
-                        current.children[k].tagName === tag &&
-                        current.children[k].getAttribute("data-edit-id") === m[3]
-                    ) { found = current.children[k]; break; }
-                }
-                if (!found) return null;
-                current = found;
-            } else {
-                var wanted = m[2] ? parseInt(m[2], 10) : 1;
-                var count = 0;
-                var next = null;
-                for (var j = 0; j < current.children.length; j++) {
-                    var child = current.children[j];
-                    if (child.tagName !== tag) continue;
-                    if (child.hasAttribute("data-edit-id")) continue;
-                    count++;
-                    if (count === wanted) { next = child; break; }
-                }
-                if (!next) return null;
-                current = next;
-            }
-        }
-        return current;
-    }
+    let value = String(price || "")
+        .replace(/[^\d,.]/g, "")
+        .replace(/\./g, "")
+        .replace(",", ".");
 
-    /* ==========================================================
-       3) BEARBEITBARE ELEMENTE FINDEN
-       ========================================================== */
+    let result = Number(value);
 
-    var SKIP_TAGS = {
-        SCRIPT: 1, STYLE: 1, NOSCRIPT: 1, TEMPLATE: 1, LINK: 1, META: 1,
-        TITLE: 1, HEAD: 1, HTML: 1, BODY: 1, IFRAME: 1, CANVAS: 1,
-        VIDEO: 1, AUDIO: 1, SVG: 1, IMG: 1, INPUT: 1, TEXTAREA: 1,
-        SELECT: 1, OPTION: 1, BR: 1, HR: 1
-    };
+    return Number.isFinite(result) ? result : 0;
+}
 
-    function classSelector() {
-        var list = ADMIN_CONFIG.editableClasses || [];
-        if (!list.length) return null;
-        return list.map(function (c) {
-            return c.charAt(0) === "." ? c : "." + c;
-        }).join(",");
-    }
+function formatPrice(price) {
+    return price.toLocaleString("de-DE", {
+        style: "currency",
+        currency: "EUR"
+    });
+}
 
-    function isEditable(node) {
-        if (!node || node.nodeType !== 1) return false;
-        if (SKIP_TAGS[node.tagName]) return false;
-        if (node.closest("[data-no-edit], .admin-ui")) return false;
-        if (node.getAttribute("contenteditable") === "true") return false;
-        if (directText(node).trim() === "") return false;
+/* DATEN LADEN */
 
-        var sel = classSelector();
-        if (sel) {
-            if (!node.matches(sel) && !node.closest(sel)) return false;
-        }
-        return true;
-    }
+function loadData() {
+    try {
+        const saved = localStorage.getItem("glassStoreData");
 
-    function collectEntries() {
-        var nodes = document.body.querySelectorAll("*");
-        var list = [];
-        var seen = {};
+        if (saved) {
+            const parsed = JSON.parse(saved);
 
-        for (var i = 0; i < nodes.length; i++) {
-            var node = nodes[i];
-            if (!isEditable(node)) continue;
+            if (parsed && Array.isArray(parsed.products)) {
+                data = { ...data, ...parsed };
 
-            var key = pathKey(node);
-            if (!key || seen[key]) continue;
-            seen[key] = true;
-
-            var text = directText(node).replace(/\s+/g, " ").trim();
-            state.originals[key] = text;
-            node.setAttribute("data-editable", "1");
-
-            list.push({
-                key: key,
-                node: node,
-                tag: node.tagName.toLowerCase(),
-                classes: (node.className || "").toString().trim(),
-                original: text
-            });
-        }
-
-        state.entries = list;
-        return list;
-    }
-
-    /* ==========================================================
-       4) GESPEICHERTE TEXTE ANWENDEN
-       ========================================================== */
-
-    function applyContent(content) {
-        if (!content) return;
-        Object.keys(content).forEach(function (key) {
-            if (key.charAt(0) === "_") return; // __updatedAt usw.
-            var value = content[key];
-            if (typeof value !== "string") return;
-            var node = resolveKey(key);
-            if (!node) return; // Element existiert nicht (mehr) – überspringen
-            if (directText(node).trim() === value.trim()) return;
-            setDirectText(node, value);
-        });
-    }
-
-    function currentValueOf(key) {
-        var node = resolveKey(key);
-        if (!node) return null;
-        return directText(node).replace(/\s+/g, " ").trim();
-    }
-
-    /* ==========================================================
-       5) API
-       ========================================================== */
-
-    function apiGet(url) {
-        return fetch(url, { headers: { "Accept": "application/json" } })
-            .then(function (r) { return r.json(); });
-    }
-
-    function loadContent(force) {
-        return apiGet(ADMIN_CONFIG.api.content).then(function (data) {
-            if (!data || !data.ok) throw new Error("Server nicht erreichbar");
-            state.lastUpdatedAt = data.updatedAt || null;
-            state.remote = {};
-            Object.keys(data.content || {}).forEach(function (k) {
-                if (k.charAt(0) !== "_") state.remote[k] = data.content[k];
-            });
-            applyContent(state.remote);
-            return data;
-        }).catch(function (err) {
-            console.warn("[admin] Inhalte konnten nicht geladen werden:", err);
-        });
-    }
-
-    function saveContent(changes) {
-        if (!TOKEN) return Promise.reject(new Error("Nicht eingeloggt"));
-        return fetch(ADMIN_CONFIG.api.content, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Admin-Token": TOKEN
-            },
-            body: JSON.stringify({
-                token: TOKEN,
-                updates: changes.updates || {},
-                deletes: changes.deletes || []
-            })
-        }).then(function (r) {
-            return r.json().then(function (data) {
-                if (!r.ok || !data.ok) {
-                    var err = new Error(data && data.error ? data.error : "Speichern fehlgeschlagen");
-                    err.status = r.status;
-                    throw err;
-                }
-                return data;
-            });
-        });
-    }
-
-    function startPolling() {
-        if (!ADMIN_CONFIG.pollInterval || state.pollTimer) return;
-        state.pollTimer = setInterval(function () {
-            var panelOpen = !!$(".admin-panel");
-            if (panelOpen) return; // während des Bearbeitens nicht überschreiben
-            if (document.hidden) return;
-            loadContent();
-        }, ADMIN_CONFIG.pollInterval);
-    }
-
-    /* ==========================================================
-       6) PASSWORT-FENSTER
-       ========================================================== */
-
-    function openPasswordDialog() {
-        if ($(".admin-overlay")) return;
-
-        var overlay = el("div", "admin-ui admin-overlay");
-        var dialog = el("div", "admin-dialog");
-        var heading = el("h2", null, "Admin-Bereich");
-        var hint = el("p", null, "Bitte Passwort eingeben, um die Texte zu bearbeiten.");
-        var input = el("input", "admin-input");
-        input.type = "password";
-        input.placeholder = "Passwort";
-        input.autocomplete = "current-password";
-        var error = el("div", "admin-error");
-        var actions = el("div", "admin-actions");
-        var cancel = el("button", "admin-btn", "Abbrechen");
-        var submit = el("button", "admin-btn primary", "Öffnen");
-        actions.appendChild(cancel);
-        actions.appendChild(submit);
-
-        dialog.appendChild(heading);
-        dialog.appendChild(hint);
-        dialog.appendChild(input);
-        dialog.appendChild(error);
-        dialog.appendChild(actions);
-        overlay.appendChild(dialog);
-        document.body.appendChild(overlay);
-
-        setTimeout(function () { input.focus(); }, 30);
-
-        function close() { overlay.remove(); }
-
-        function submitPassword() {
-            // Leerzeichen am Anfang/Ende verzeihen (Copy & Paste, Autofill)
-            var password = String(input.value || "").trim();
-            if (!password) { error.textContent = "Bitte Passwort eingeben."; return; }
-            submit.disabled = true;
-            submit.textContent = "Prüfe…";
-
-            fetch(ADMIN_CONFIG.api.login, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password: password })
-            }).then(function (r) {
-                return r.json().then(function (data) {
-                    if (!r.ok || !data.ok) throw new Error(data && data.error ? data.error : "Falsches Passwort");
-                    return data;
+                data.products.forEach((product, index) => {
+                    if (!product.id) product.id = "p" + (index + 1);
+                    if (typeof product.image !== "string") product.image = "";
                 });
-            }).then(function (data) {
-                TOKEN = data.token;
-                try { sessionStorage.setItem(ADMIN_CONFIG.tokenKey, TOKEN); } catch (e) {}
-                close();
-                openPanel();
-            }).catch(function (err) {
-                var msg = err.message || "Login fehlgeschlagen";
-                if (!msg || msg === "Failed to fetch" || msg === "Load failed" || err.name === "TypeError") {
-                    msg = "Server nicht erreichbar. Die Seite muss über den Server geöffnet werden " +
-                          "(npm start → http://localhost:3000), nicht als Datei.";
-                }
-                error.textContent = msg;
-                submit.disabled = false;
-                submit.textContent = "Öffnen";
-                input.select();
-            });
-        }
-
-        submit.addEventListener("click", submitPassword);
-        cancel.addEventListener("click", close);
-        input.addEventListener("keydown", function (e) {
-            if (e.key === "Enter") { e.preventDefault(); submitPassword(); }
-        });
-        overlay.addEventListener("mousedown", function (e) {
-            if (e.target === overlay) close();
-        });
-        document.addEventListener("keydown", function escHandler(e) {
-            if (e.key === "Escape") {
-                close();
-                document.removeEventListener("keydown", escHandler);
-            }
-        });
-    }
-
-    /* ==========================================================
-       7) BEARBEITUNGS-PANEL
-       ========================================================== */
-
-    function openPanel() {
-        if ($(".admin-panel")) return;
-        document.body.classList.add("admin-mode");
-        collectEntries();
-
-        var panel = el("aside", "admin-ui admin-panel");
-
-        /* Kopf */
-        var head = el("div", "admin-panel-head");
-        var row = el("div", "row");
-        var title = el("h2", null, "SHRED. Admin");
-        var closeBtn = el("button", "admin-close", "✕");
-        closeBtn.type = "button";
-        closeBtn.title = "Schließen";
-        closeBtn.addEventListener("click", closePanel);
-        row.appendChild(title);
-        row.appendChild(closeBtn);
-
-        var toolbar = el("div", "admin-toolbar");
-        var search = el("input", "admin-input");
-        search.type = "search";
-        search.placeholder = "Texte durchsuchen…";
-        toolbar.appendChild(search);
-
-        var note = el("p", "admin-note", "Einfach lostippen – die Änderung ist sofort auf der Seite sichtbar. Mit „Speichern“ wird sie für alle Besucher online gestellt.");
-        head.appendChild(row);
-        head.appendChild(toolbar);
-        head.appendChild(note);
-        panel.appendChild(head);
-
-        /* Liste */
-        var list = el("div", "admin-list");
-        panel.appendChild(list);
-
-        /* Fuß */
-        var status = el("div", "admin-status", "");
-        panel.appendChild(status);
-
-        var foot = el("div", "admin-panel-foot");
-        var resetAll = el("button", "admin-btn", "Alles zurücksetzen");
-        resetAll.type = "button";
-        var saveBtn = el("button", "admin-btn primary", "Speichern");
-        saveBtn.type = "button";
-        var logoutBtn = el("button", "admin-btn", "Logout");
-        logoutBtn.type = "button";
-        foot.appendChild(resetAll);
-        foot.appendChild(saveBtn);
-        foot.appendChild(logoutBtn);
-        panel.appendChild(foot);
-
-        document.body.appendChild(panel);
-
-        /* Einträge rendern */
-        function renderEntries(filter) {
-            list.innerHTML = "";
-            var q = (filter || "").toLowerCase();
-            var shown = 0;
-
-            state.entries.forEach(function (entry) {
-                if (q) {
-                    var hay = (entry.tag + " " + entry.classes + " " + entry.original + " " + entry.key).toLowerCase();
-                    if (hay.indexOf(q) === -1) return;
-                }
-                shown++;
-
-                var item = el("div", "admin-item");
-                var label = el("label");
-
-                var tagSpan = el("span", "tag", entry.tag);
-                label.appendChild(tagSpan);
-                if (entry.classes) {
-                    label.appendChild(document.createTextNode(" "));
-                    var clsSpan = el("span", "cls", "." + entry.classes.split(/\s+/).join("."));
-                    label.appendChild(clsSpan);
-                }
-                item.appendChild(label);
-
-                var ta = el("textarea");
-                ta.rows = Math.min(6, Math.max(1, Math.ceil(entry.original.length / 42)));
-                ta.value = currentValueOf(entry.key) || "";
-                ta.setAttribute("data-key", entry.key);
-                ta.addEventListener("input", function () {
-                    var node = resolveKey(entry.key);
-                    if (node) setDirectText(node, ta.value);
-                    status.className = "admin-status";
-                    status.textContent = "Ungespeicherte Änderungen";
-                });
-                item.appendChild(ta);
-
-                var footer = el("div", "footer");
-                var path = el("span", null, entry.key);
-                var reset = el("button", "admin-link", "zurücksetzen");
-                reset.type = "button";
-                reset.addEventListener("click", function () {
-                    ta.value = entry.original;
-                    var node = resolveKey(entry.key);
-                    if (node) setDirectText(node, entry.original);
-                    status.className = "admin-status";
-                    status.textContent = "Ungespeicherte Änderungen";
-                });
-                footer.appendChild(path);
-                footer.appendChild(reset);
-                item.appendChild(footer);
-
-                list.appendChild(item);
-            });
-
-            if (!shown) {
-                list.appendChild(el("p", "admin-note", "Keine passenden Textstellen gefunden."));
             }
         }
 
-        renderEntries("");
+        const savedCart = localStorage.getItem("shredCart");
 
-        search.addEventListener("input", function () { renderEntries(search.value); });
+        if (savedCart) {
+            const parsedCart = JSON.parse(savedCart);
 
-        /* Speichern */
-        function collectChanges() {
-            var updates = {};
-            var deletes = [];
-            var textareas = list.querySelectorAll("textarea[data-key]");
-
-            for (var i = 0; i < textareas.length; i++) {
-                var ta = textareas[i];
-                var key = ta.getAttribute("data-key");
-                var value = ta.value.replace(/\s+/g, " ").trim();
-                var stored = state.remote[key];
-
-                if (value === "") {
-                    if (stored != null) deletes.push(key);
-                } else if (value !== stored) {
-                    updates[key] = value;
-                }
+            if (Array.isArray(parsedCart)) {
+                cart = parsedCart.filter(item =>
+                    item &&
+                    typeof item.id === "string" &&
+                    Number.isInteger(item.quantity) &&
+                    item.quantity > 0
+                );
             }
-            return { updates: updates, deletes: deletes };
         }
 
-        saveBtn.addEventListener("click", function () {
-            if (state.saving) return;
-            var changes = collectChanges();
-            if (!Object.keys(changes.updates).length && !changes.deletes.length) {
-                status.className = "admin-status ok";
-                status.textContent = "Alles gespeichert – keine Änderungen.";
-                return;
-            }
-
-            state.saving = true;
-            saveBtn.disabled = true;
-            saveBtn.textContent = "Speichere…";
-
-            saveContent(changes).then(function (data) {
-                state.remote = {};
-                Object.keys(data.content || {}).forEach(function (k) {
-                    if (k.charAt(0) !== "_") state.remote[k] = data.content[k];
-                });
-                state.lastUpdatedAt = data.updatedAt || null;
-                status.className = "admin-status ok";
-                status.textContent = "Gespeichert ✓  " + new Date().toLocaleTimeString("de-DE");
-                toast("Änderungen online gespeichert");
-                renderEntries(search.value);
-            }).catch(function (err) {
-                status.className = "admin-status err";
-                status.textContent = err.message || "Speichern fehlgeschlagen";
-                if (err.status === 401) {
-                    TOKEN = null;
-                    try { sessionStorage.removeItem(ADMIN_CONFIG.tokenKey); } catch (e) {}
-                    closePanel();
-                    openPasswordDialog();
-                }
-            }).then(function () {
-                state.saving = false;
-                saveBtn.disabled = false;
-                saveBtn.textContent = "Speichern";
-            });
-        });
-
-        /* Alles zurücksetzen */
-        resetAll.addEventListener("click", function () {
-            if (!confirm("Alle gespeicherten Änderungen zurücksetzen und die Originaltexte wiederherstellen?")) return;
-            var deletes = Object.keys(state.remote);
-            if (!deletes.length) { toast("Es gibt keine gespeicherten Änderungen"); return; }
-
-            saveBtn.disabled = true;
-            saveContent({ updates: {}, deletes: deletes }).then(function () {
-                state.remote = {};
-                state.entries.forEach(function (entry) {
-                    var node = resolveKey(entry.key);
-                    if (node) setDirectText(node, entry.original);
-                });
-                toast("Alle Texte zurückgesetzt");
-                renderEntries(search.value);
-                status.className = "admin-status ok";
-                status.textContent = "Originaltexte wiederhergestellt.";
-            }).catch(function (err) {
-                status.className = "admin-status err";
-                status.textContent = err.message || "Zurücksetzen fehlgeschlagen";
-            }).then(function () {
-                saveBtn.disabled = false;
-            });
-        });
-
-        /* Logout */
-        logoutBtn.addEventListener("click", function () {
-            fetch(ADMIN_CONFIG.api.logout, {
-                method: "POST",
-                headers: { "X-Admin-Token": TOKEN || "" }
-            }).catch(function () {}).then(function () {
-                TOKEN = null;
-                try { sessionStorage.removeItem(ADMIN_CONFIG.tokenKey); } catch (e) {}
-                closePanel();
-                toast("Abgemeldet");
-            });
-        });
-
-        /* Inline-Bearbeitung: Klick auf ein markiertes Element springt
-           zum passenden Feld im Panel */
-        document.body.addEventListener("click", adminInlineClick);
+    } catch (error) {
+        console.error("Ladefehler:", error);
     }
 
-    function adminInlineClick(e) {
-        if (!$(".admin-panel")) return;
-        var target = e.target.closest("[data-editable='1']");
-        if (!target) return;
-        // Links im Admin-Modus nicht öffnen
-        if (e.target.closest("a")) e.preventDefault();
-        var key = pathKey(target);
-        var ta = document.querySelector('.admin-panel textarea[data-key="' + key + '"]');
-        if (ta) {
-            ta.focus();
-            ta.select();
-            ta.scrollIntoView({ block: "center", behavior: "smooth" });
-        }
-    }
+    renderWebsite();
+    updateCart();
+}
 
-    function closePanel() {
-        var panel = $(".admin-panel");
-        if (panel) panel.remove();
-        document.body.classList.remove("admin-mode");
-        document.body.removeEventListener("click", adminInlineClick);
-    }
+/* PRODUKTE ANZEIGEN */
 
-    /* ==========================================================
-       8) ADMIN-BUTTON
-       ========================================================== */
+function renderWebsite() {
 
-    function isOpen() {
-        return !!$(".admin-panel") || !!$(".admin-overlay");
-    }
+    document.getElementById("footerText").textContent = data.footer;
 
-    function closeEverything() {
-        var overlay = $(".admin-overlay");
-        if (overlay) overlay.remove();
-        closePanel();
-    }
+    const grid = document.getElementById("productGrid");
 
-    function onAdminButtonClick(e) {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
+    grid.innerHTML = "";
 
-        // Button erneut gedrückt → das schließen, was gerade offen ist
-        if (isOpen()) {
-            closeEverything();
-            return;
+    data.products.forEach(product => {
+
+        const card = document.createElement("article");
+        card.className = "product glass";
+
+        const visual = document.createElement("div");
+        visual.className = "product-visual";
+
+        if (product.image) {
+            const image = document.createElement("img");
+            image.src = product.image;
+            image.alt = product.name || "Produktbild";
+            visual.appendChild(image);
+        } else {
+            visual.textContent = "Kein Bild";
         }
 
-        // Schon eingeloggt? Dann direkt ins Panel, sonst Passwort abfragen
-        if (!TOKEN) {
-            openPasswordDialog();
-            return;
-        }
+        const name = document.createElement("h3");
+        name.textContent = product.name || "";
 
-        fetch(ADMIN_CONFIG.api.session, {
-            headers: { "X-Admin-Token": TOKEN, "Accept": "application/json" }
-        }).then(function (r) { return r.json(); }).then(function (data) {
-            if (data && data.ok) {
-                openPanel();
-            } else {
-                TOKEN = null;
-                try { sessionStorage.removeItem(ADMIN_CONFIG.tokenKey); } catch (e2) {}
-                openPasswordDialog();
-            }
-        }).catch(function () {
-            // Server nicht erreichbar
-            TOKEN = null;
-            openPasswordDialog();
+        const description = document.createElement("p");
+        description.textContent = product.description || "";
+
+        const price = document.createElement("div");
+        price.className = "price";
+        price.textContent = formatPrice(parsePrice(product.price));
+
+        const label = document.createElement("div");
+        label.className = "product-label";
+        label.textContent = product.label || "";
+
+        const button = document.createElement("button");
+        button.className = "add-cart-button";
+        button.textContent = "🛒 In den Warenkorb";
+
+        button.addEventListener("click", () => {
+            addToCart(product.id);
         });
+
+        card.append(
+            visual,
+            name,
+            description,
+            price,
+            label,
+            button
+        );
+
+        grid.appendChild(card);
+
+    });
+
+}
+
+/* WARENKORB SPEICHERN */
+
+function saveCart() {
+    try {
+        localStorage.setItem("shredCart", JSON.stringify(cart));
+    } catch (error) {
+        console.error("Warenkorb konnte nicht gespeichert werden:", error);
     }
+}
 
-    function wireAdminButton() {
-        var button = document.getElementById("adminpanel");
-        if (!button) return;
+/* PRODUKT HINZUFÜGEN */
 
-        button.setAttribute("data-no-edit", "");
-        button.type = "button";
-        button.title = "Admin-Bereich";
-        button.style.cursor = "pointer";
-        button.addEventListener("click", onAdminButtonClick);
-    }
+function addToCart(productId) {
 
-    /* ==========================================================
-       9) START
-       ========================================================== */
+    const product = data.products.find(p => p.id === productId);
 
-    function init() {
-        if (location.protocol === "file:") {
-            console.warn("[admin] Seite wurde als Datei geöffnet – bitte über den Server aufrufen: npm start → http://localhost:3000");
-        }
+    if (!product) return;
 
-        wireAdminButton();
+    const existing = cart.find(item => item.id === productId);
 
-        // Originaltexte merken (für „zurücksetzen“)
-        collectEntries();
-
-        // Gespeicherte Texte laden und anwenden
-        loadContent().then(function () {
-            startPolling();
-        });
-
-        // Beim Zurückkehren auf den Tab aktualisieren
-        document.addEventListener("visibilitychange", function () {
-            if (!document.hidden && !isOpen()) loadContent();
-        });
-
-        // Tastenkürzel: Strg/Cmd + Shift + A öffnet/schließt den Admin-Bereich
-        document.addEventListener("keydown", function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "A" || e.key === "a")) {
-                e.preventDefault();
-                onAdminButtonClick();
-            }
-            if (e.key === "Escape") closeEverything();
-        });
-    }
-
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
+    if (existing) {
+        existing.quantity++;
     } else {
-        init();
+        cart.push({
+            id: productId,
+            quantity: 1
+        });
     }
-})();
+
+    saveCart();
+    updateCart();
+
+}
+
+/* MENGE ÄNDERN */
+
+function changeQuantity(productId, amount) {
+
+    const item = cart.find(item => item.id === productId);
+
+    if (!item) return;
+
+    item.quantity += amount;
+
+    if (item.quantity <= 0) {
+        cart = cart.filter(item => item.id !== productId);
+    }
+
+    saveCart();
+    updateCart();
+
+}
+
+/* PRODUKT ENTFERNEN */
+
+function removeFromCart(productId) {
+
+    cart = cart.filter(item => item.id !== productId);
+
+    saveCart();
+    updateCart();
+
+}
+
+/* WARENKORB AKTUALISIEREN */
+
+function updateCart() {
+
+    const container = document.getElementById("cartItems");
+
+    container.innerHTML = "";
+
+    let total = 0;
+    let count = 0;
+
+    cart.forEach(item => {
+
+        const product = data.products.find(p => p.id === item.id);
+
+        if (!product) return;
+
+        const price = parsePrice(product.price);
+
+        total += price * item.quantity;
+        count += item.quantity;
+
+        const row = document.createElement("div");
+        row.className = "cart-item";
+
+        const image = document.createElement("img");
+
+        image.src = product.image || "";
+        image.alt = product.name || "Produkt";
+
+        const info = document.createElement("div");
+        info.className = "cart-item-info";
+
+        const name = document.createElement("h3");
+        name.textContent = product.name;
+
+        const priceText = document.createElement("p");
+        priceText.textContent = formatPrice(price * item.quantity);
+
+        const controls = document.createElement("div");
+        controls.className = "quantity-controls";
+
+        const minus = document.createElement("button");
+        minus.textContent = "−";
+        minus.onclick = () => changeQuantity(item.id, -1);
+
+        const quantity = document.createElement("span");
+        quantity.textContent = item.quantity;
+
+        const plus = document.createElement("button");
+        plus.textContent = "+";
+        plus.onclick = () => changeQuantity(item.id, 1);
+
+        controls.append(minus, quantity, plus);
+
+        info.append(name, priceText, controls);
+
+        const remove = document.createElement("button");
+        remove.className = "remove-cart";
+        remove.textContent = "×";
+        remove.title = "Produkt entfernen";
+        remove.onclick = () => removeFromCart(item.id);
+
+        row.append(image, info, remove);
+
+        container.appendChild(row);
+
+    });
+
+    if (count === 0) {
+        container.innerHTML = `
+            <div class="cart-empty">
+                <div style="font-size:40px;margin-bottom:12px;">🛒</div>
+                Dein Warenkorb ist noch leer.
+            </div>
+        `;
+    }
+
+    document.getElementById("cartCount").textContent = count;
+    document.getElementById("cartTotal").textContent = formatPrice(total);
+
+}
+
+/* WARENKORB ÖFFNEN */
+
+function openCart() {
+    updateCart();
+    document.getElementById("cartOverlay").classList.add("active");
+}
+
+function closeCart() {
+    document.getElementById("cartOverlay").classList.remove("active");
+}
+
+/* CHECKOUT */
+
+function openCheckout() {
+
+    if (cart.length === 0) {
+        alert("Dein Warenkorb ist leer.");
+        return;
+    }
+
+    const container = document.getElementById("checkoutItems");
+
+    container.innerHTML = "";
+
+    let total = 0;
+
+    cart.forEach(item => {
+
+        const product = data.products.find(p => p.id === item.id);
+
+        if (!product) return;
+
+        const subtotal = parsePrice(product.price) * item.quantity;
+
+        total += subtotal;
+
+        const line = document.createElement("p");
+
+        line.style.margin = "12px 0";
+        line.style.color = "#dce6f5";
+
+        line.textContent =
+            item.quantity + " × " +
+            product.name + " – " +
+            formatPrice(subtotal);
+
+        container.appendChild(line);
+
+    });
+
+    document.getElementById("checkoutTotal").textContent =
+        formatPrice(total);
+
+    closeCart();
+
+    document.getElementById("checkoutOverlay").classList.add("active");
+
+}
+
+function closeCheckout() {
+    document.getElementById("checkoutOverlay").classList.remove("active");
+}
+
+/* LOGIN */
+
+function openLogin() {
+
+    document.getElementById("loginOverlay").classList.add("active");
+
+    document.getElementById("passwordInput").value = "";
+
+    document.getElementById("loginError").textContent = "";
+
+}
+
+function closeLogin() {
+    document.getElementById("loginOverlay").classList.remove("active");
+}
+
+function checkPassword() {
+
+    const password = document.getElementById("passwordInput").value;
+
+    if (password === "67") {
+
+        closeLogin();
+        openAdmin();
+
+    } else {
+
+        document.getElementById("loginError").textContent =
+            "❌ Falsches Passwort!";
+
+    }
+
+}
+
+/* STAFF MENÜ */
+
+function openAdmin() {
+
+    document.getElementById("adminOverlay").classList.add("active");
+
+    document.getElementById("editFooter").value = data.footer;
+
+    document.getElementById("saveStatus").textContent = "";
+
+    renderAdminProducts();
+
+}
+
+function closeAdmin() {
+    document.getElementById("adminOverlay").classList.remove("active");
+}
+
+/* BEREICHE AUFKLAPPEN */
+
+function toggleAdminSection(contentId, button) {
+
+    const content = document.getElementById(contentId);
+
+    content.hidden = !content.hidden;
+
+    button.querySelector(".toggle-symbol").textContent =
+        content.hidden ? "＋" : "×";
+
+}
+
+/* PRODUKTE IM STAFF MENÜ */
+
+function renderAdminProducts() {
+
+    const container = document.getElementById("adminProducts");
+
+    container.innerHTML = "";
+
+    data.products.forEach((product, index) => {
+
+        const item = document.createElement("div");
+        item.className = "admin-product";
+
+        const heading = document.createElement("button");
+
+        heading.type = "button";
+        heading.className = "admin-toggle product-toggle";
+
+        const headingText = document.createElement("span");
+
+        headingText.textContent =
+            "Produkt " + (index + 1) + " – " +
+            (product.name || "Ohne Namen");
+
+        const toggleSymbol = document.createElement("span");
+
+        toggleSymbol.className = "toggle-symbol";
+        toggleSymbol.textContent = "＋";
+
+        heading.append(headingText, toggleSymbol);
+
+        const fieldsContainer = document.createElement("div");
+
+        fieldsContainer.className = "product-fields";
+        fieldsContainer.hidden = true;
+
+        heading.onclick = () => {
+
+            fieldsContainer.hidden = !fieldsContainer.hidden;
+
+            toggleSymbol.textContent =
+                fieldsContainer.hidden ? "＋" : "×";
+
+        };
+
+        const fields = [
+            ["Name", "name"],
+            ["Beschreibung", "description"],
+            ["Preis", "price"],
+            ["Kennzeichnung", "label"]
+        ];
+
+        fields.forEach(([label, key]) => {
+
+            const fieldLabel = document.createElement("label");
+
+            fieldLabel.className = "field-label";
+            fieldLabel.textContent = label;
+
+            const input = document.createElement("input");
+
+            input.value = product[key] || "";
+            input.dataset.index = index;
+            input.dataset.key = key;
+            input.className = "product-edit-field";
+
+            if (key === "name") {
+
+                input.addEventListener("input", () => {
+
+                    headingText.textContent =
+                        "Produkt " + (index + 1) + " – " +
+                        (input.value || "Ohne Namen");
+
+                });
+
+            }
+
+            fieldsContainer.append(fieldLabel, input);
+
+        });
+
+        /* BILD-UPLOAD */
+
+        const imageLabel = document.createElement("label");
+
+        imageLabel.className = "field-label";
+        imageLabel.textContent = "Produktbild vom PC auswählen";
+
+        const imageInput = document.createElement("input");
+
+        imageInput.type = "file";
+        imageInput.accept = "image/*";
+
+        const preview = document.createElement("img");
+
+        preview.className = "image-preview";
+        preview.alt = "Bildvorschau";
+
+        preview.style.display = product.image ? "block" : "none";
+
+        if (product.image) {
+            preview.src = product.image;
+        }
+
+        imageInput.addEventListener("change", () => {
+
+            const file = imageInput.files[0];
+
+            if (!file) return;
+
+            if (!file.type.startsWith("image/")) {
+
+                alert("Bitte wähle eine Bilddatei aus.");
+
+                imageInput.value = "";
+
+                return;
+
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+
+                alert("Das Bild ist zu groß. Bitte wähle ein Bild unter 2 MB.");
+
+                imageInput.value = "";
+
+                return;
+
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = () => {
+
+                data.products[index].image = reader.result;
+
+                preview.src = reader.result;
+
+                preview.style.display = "block";
+
+                document.getElementById("saveStatus").textContent =
+                    "Bild ausgewählt. Klicke auf Änderungen speichern.";
+
+            };
+
+            reader.readAsDataURL(file);
+
+        });
+
+        fieldsContainer.append(imageLabel, imageInput, preview);
+
+        /* PRODUKT LÖSCHEN */
+
+        const deleteButton = document.createElement("button");
+
+        deleteButton.className = "action-button delete-button";
+        deleteButton.textContent = "Produkt löschen";
+
+        deleteButton.onclick = () => {
+
+            collectProducts();
+
+            const id = data.products[index].id;
+
+            data.products.splice(index, 1);
+
+            cart = cart.filter(item => item.id !== id);
+
+            saveCart();
+
+            renderAdminProducts();
+
+            updateCart();
+
+        };
+
+        fieldsContainer.appendChild(deleteButton);
+
+        item.append(heading, fieldsContainer);
+
+        container.appendChild(item);
+
+    });
+
+}
+
+/* PRODUKTDATEN ÜBERNEHMEN */
+
+function collectProducts() {
+
+    document.querySelectorAll(".product-edit-field").forEach(input => {
+
+        const index = Number(input.dataset.index);
+
+        const key = input.dataset.key;
+
+        if (data.products[index]) {
+
+            data.products[index][key] = input.value;
+
+        }
+
+    });
+
+}
+
+/* NEUES PRODUKT */
+
+function addProduct() {
+
+    collectProducts();
+
+    data.products.push({
+
+        id: "p" + Date.now() + Math.random().toString(36).slice(2, 7),
+        name: "Neues Produkt",
+        description: "Hier steht deine Produktbeschreibung.",
+        price: "0,00 €",
+        image: "",
+        label: "Neu"
+
+    });
+
+    renderAdminProducts();
+
+}
+
+/* ALLES SPEICHERN */
+
+function saveAll() {
+
+    collectProducts();
+
+    data.footer = document.getElementById("editFooter").value;
+
+    try {
+
+        localStorage.setItem(
+            "glassStoreData",
+            JSON.stringify(data)
+        );
+
+        renderWebsite();
+
+        updateCart();
+
+        document.getElementById("saveStatus").textContent =
+            "✓ Änderungen und Produkte erfolgreich gespeichert!";
+
+    } catch (error) {
+
+        document.getElementById("saveStatus").textContent =
+            "Speichern fehlgeschlagen. Eventuell sind die Bilder zu groß.";
+
+    }
+
+}
+
+/* START */
+
+loadData();
+
 </script>
+
 </body>
 </html>
