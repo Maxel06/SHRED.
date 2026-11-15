@@ -6,10 +6,16 @@
   "outputDirectory": null,
   "functions": {
     "api/index.js": {
-      "maxDuration": 10,
+      "maxDuration": 60,
       "memory": 512
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/close-tickets",
+      "schedule": "0 4 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/server.js", "destination": "/__not_found" },
