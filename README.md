@@ -32,19 +32,42 @@ einfach auf das **SHRED.-Logo oben links** klicken.
   Offline-Modus: Änderungen werden dann nur lokal im Browser gespeichert
   (altes Verhalten, Passwort `67`).
 
-### Bestellungen an Discord
+### Bestellungen an Discord (Ticketsystem)
 
-Klickt ein Kunde auf **Zur Kasse gehen**, sieht er die Bestellübersicht.
-Mit **„Bestellung an Discord senden"** wird eine Liste (Artikel + Anzahl)
-automatisch in den Discord-Kanal gepostet, der Warenkorb geleert und der
-Kunde zum Discord-Kanal weitergeleitet.
+Klickt ein Kunde auf **Zur Kasse gehen**, gibt er bei der Bestellübersicht
+seinen **Discord-Namen** ein (Pflichtfeld). Beim Abschicken passiert Folgendes:
 
-- Technisch: `POST /api/order` (öffentlich, rate-limited: 10 Bestellungen
-  pro 10 Minuten und IP) schickt die Liste über einen Discord-Webhook.
-- Der Webhook wird über die Umgebungsvariable `DISCORD_WEBHOOK_URL`
-  konfiguriert (Vercel: *Project → Settings → Environment Variables*).
-  Erzeugt wird er in Discord unter *Servereinstellungen → Integrationen →
-  Webhooks*.
+1. Der Bot sucht den Kunden anhand des Namens auf dem Discord-Server
+2. Der Bot legt einen **privaten Kanal** in der Kategorie **Bestellungen** an,
+   z. B. `bestellung-maxel06`
+3. Der Kanal ist nur sichtbar für die Rollen **Paxy** und **Oxkar**, den
+   Bot und den **Kunden** (@everyone ist ausgesperrt)
+4. Die Bestellliste (Artikel + Anzahl) wird im Kanal gepostet und der
+   Kunde dabei angepingt
+5. Der Kunde wird direkt zu seinem Bestell-Ticket weitergeleitet
+
+**Einrichtung (Umgebungsvariablen in Vercel):**
+
+| Variable | Bedeutung |
+| --- | --- |
+| `DISCORD_BOT_TOKEN` | Token des Discord-Bots (Pflicht) |
+| `DISCORD_GUILD_ID` | Server-ID (Standard: SHRED.-Server) |
+| `DISCORD_STAFF_ROLES` | Rollen, die Tickets sehen (Standard: `Paxy,Oxkar`) |
+| `DISCORD_CATEGORY` | Kategorie-Name (Standard: `Bestellungen`) |
+| `DISCORD_WEBHOOK_URL` | Fallback, falls der Bot nicht kann |
+
+Der Bot braucht die Rechte *Kanäle verwalten*, *Rollen verwalten*,
+*Kanäle ansehen*, *Nachrichten senden* – und seine Rolle muss in der
+Server-Rollenliste **über** den Staff-Rollen stehen, sonst darf er deren
+Zugriff nicht setzen. Außerdem muss im Developer-Portal der
+**Server Members Intent** aktiviert sein (für die Namenssuche).
+
+**Diagnose:** `GET /api/discord/status` prüft die Einrichtung,
+`GET /api/discord/status?test=1` legt zusätzlich ein Test-Ticket an.
+
+**Fallback:** Schlägt das Ticket fehl (z. B. Name nicht gefunden → 404 mit
+Hinweis), bleibt der Warenkorb erhalten; bei Bot-Problemen wird die
+Bestellung notfalls als normale Nachricht über den Webhook gepostet.
 
 ---
 
