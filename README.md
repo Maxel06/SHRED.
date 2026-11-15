@@ -32,6 +32,20 @@ einfach auf das **SHRED.-Logo oben links** klicken.
   Offline-Modus: Änderungen werden dann nur lokal im Browser gespeichert
   (altes Verhalten, Passwort `67`).
 
+### Bestellungen an Discord
+
+Klickt ein Kunde auf **Zur Kasse gehen**, sieht er die Bestellübersicht.
+Mit **„Bestellung an Discord senden"** wird eine Liste (Artikel + Anzahl)
+automatisch in den Discord-Kanal gepostet, der Warenkorb geleert und der
+Kunde zum Discord-Kanal weitergeleitet.
+
+- Technisch: `POST /api/order` (öffentlich, rate-limited: 10 Bestellungen
+  pro 10 Minuten und IP) schickt die Liste über einen Discord-Webhook.
+- Der Webhook wird über die Umgebungsvariable `DISCORD_WEBHOOK_URL`
+  konfiguriert (Vercel: *Project → Settings → Environment Variables*).
+  Erzeugt wird er in Discord unter *Servereinstellungen → Integrationen →
+  Webhooks*.
+
 ---
 
 ## 1. Lokal starten

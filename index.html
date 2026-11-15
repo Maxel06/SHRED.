@@ -433,6 +433,16 @@ input[type="file"] {
     background: #c5c9ed;
 }
 
+.checkout-button:disabled {
+    opacity: .6;
+    cursor: default;
+}
+
+.checkout-button:disabled:hover {
+    background: gray;
+    transform: none;
+}
+
 /* ADMIN */
 
 .admin-modal {
@@ -769,9 +779,16 @@ input[type="file"] {
         </div>
 
         <p class="modal-description">
-            Dies ist zunächst nur eine Bestellübersicht.
-            Es wird keine Zahlung durchgeführt.
+            Wenn du auf den Button klickst, wird diese Liste (Artikel + Anzahl)
+            an unseren Discord-Server geschickt und du wirst zu Discord
+            weitergeleitet. Es wird keine Zahlung durchgeführt.
         </p>
+
+        <button class="checkout-button" id="submitOrderButton" onclick="submitOrder()">
+            📋 Bestellung an Discord senden
+        </button>
+
+        <div class="status" id="orderStatus"></div>
 
         <button class="action-button close-button" onclick="closeCheckout()">
             Zurück
@@ -866,8 +883,13 @@ let cart = [];
 const API = {
     content: "/api/content",
     login: "/api/login",
-    session: "/api/session"
+    session: "/api/session",
+    order: "/api/order"
 };
+
+/* Discord-Kanal, der nach dem Abschicken der Bestellung geöffnet wird */
+const DISCORD_CHANNEL_URL =
+    "https://discord.com/channels/1571213152681463938/1571222544919306381";
 
 const TOKEN_KEY = "shred-admin-token";
 const SHOP_DATA_KEY = "shopData";
@@ -1211,6 +1233,14 @@ function openCheckout() {
     document.getElementById("checkoutTotal").textContent =
         formatPrice(total);
 
+    document.getElementById("orderStatus").textContent = "";
+
+    const submitButton = document.getElementById("submitOrderButton");
+
+    if (submitButton) {
+        submitButton.disabled = false;
+    }
+
     closeCart();
 
     document.getElementById("checkoutOverlay").classList.add("active");
@@ -1219,6 +1249,107 @@ function openCheckout() {
 
 function closeCheckout() {
     document.getElementById("checkoutOverlay").classList.remove("active");
+}
+
+/* BESTELLUNG AN DISCORD SENDEN */
+
+let orderBusy = false;
+
+function redirectToDiscord() {
+    window.location.href = DISCORD_CHANNEL_URL;
+}
+
+async function submitOrder() {
+
+    if (orderBusy) return;
+
+    const statusBox = document.getElementById("orderStatus");
+    const submitButton = document.getElementById("submitOrderButton");
+
+    if (cart.length === 0) {
+        statusBox.style.color = "#ff8e9c";
+        statusBox.textContent = "Dein Warenkorb ist leer.";
+        return;
+    }
+
+    /* Liste mit Artikelnamen + Anzahl erstellen */
+
+    const items = [];
+
+    cart.forEach(item => {
+
+        const product = data.products.find(p => p.id === item.id);
+
+        if (product) {
+            items.push({
+                name: product.name || "Produkt",
+                quantity: item.quantity
+            });
+        }
+
+    });
+
+    if (items.length === 0) {
+        statusBox.style.color = "#ff8e9c";
+        statusBox.textContent = "Keine gültigen Artikel gefunden.";
+        return;
+    }
+
+    orderBusy = true;
+
+    if (submitButton) {
+        submitButton.disabled = true;
+    }
+
+    statusBox.style.color = "";
+    statusBox.textContent = "Sende Bestellung an Discord…";
+
+    try {
+
+        const response = await fetch(API.order, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: items })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result || !result.ok) {
+            throw new Error((result && result.error) || "Serverfehler");
+        }
+
+        /* Bestellung ist raus -> Warenkorb leeren */
+
+        cart = [];
+
+        saveCart();
+        updateCart();
+
+        statusBox.style.color = "";
+        statusBox.textContent =
+            "✓ Bestellung gesendet! Du wirst gleich zu Discord weitergeleitet…";
+
+        setTimeout(redirectToDiscord, 1500);
+
+    } catch (error) {
+
+        statusBox.style.color = "#ff8e9c";
+
+        statusBox.textContent =
+            "Fehlgeschlagen: " +
+            ((error && error.message) || "Unbekannter Fehler") +
+            " Bitte versuche es erneut.";
+
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
+
+    } finally {
+
+        orderBusy = false;
+
+    }
+
 }
 
 /* SERVER-VERBINDUNG & BILDER */
